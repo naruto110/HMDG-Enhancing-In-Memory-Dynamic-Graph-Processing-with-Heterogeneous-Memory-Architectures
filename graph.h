@@ -5,12 +5,12 @@
 
 size_v findIdleBlk(vector<idle_blk*> &idle_blk_vec,size_v degree)
 {
-	size_v cap = degree + ceil((float)BUF_PRO * degree) + 3;  // +3 ÓÃÀ´´æ´¢ id degree offset
+	size_v cap = degree + ceil((float)BUF_PRO * degree) + 3;  
 	for (size_v blkIdx = 0; blkIdx < idle_blk_vec.size(); blkIdx++)
 	{
 		if (idle_blk_vec[blkIdx]->max_cap >= cap)
 		{
-			idle_blk_vec[blkIdx]->max_cap -= cap;  // ¸üĞÂmax_cap
+			idle_blk_vec[blkIdx]->max_cap -= cap;  
 			idle_blk_vec[blkIdx]->next_pos = idle_blk_vec[blkIdx]->next_pos - cap + 3;
 			return idle_blk_vec[blkIdx]->blk_idx;
 		}
@@ -20,7 +20,7 @@ size_v findIdleBlk(vector<idle_blk*> &idle_blk_vec,size_v degree)
 
 void toVertexV(const WorkerParams& params, char* line, PMEMoid root)
 {
-	// Êı¾İ¸ñÊ½£ºid |degree| neighbor-0 neighbor-1 ... 
+	// id |degree| neighbor-0 neighbor-1 ... 
 	char* pch;
 	pch = strtok(line, "\t");
 	size_v id = atoi(pch);  // for larger id, use atol
@@ -35,26 +35,25 @@ void toVertexV(const WorkerParams& params, char* line, PMEMoid root)
 
 	//cout << "ID: " << id << " degree: " << degree << endl;
 
-	if (degree >= MAX_DEG_CAP) // ÀíÂÛÉÏÒ»¸öblk×°²»ÏÂ£¨°üº¬buffer£©
+	if (degree >= MAX_DEG_CAP) 
 	{
-		size_v numblk = ceil((float)degree / (MAX_LEN-3)); // Ö»¿¼ÂÇÁÚ½Úµã´æ´¢£¬²»¿¼ÂÇbuffer
+		size_v numblk = ceil((float)degree / (MAX_LEN-3)); 
 
 		//cout << "numblk: " << numblk << endl;
 
-		size_v nei_mod = degree % (MAX_LEN - 3);  // ×îºóÒ»¸öblk´æ´¢µÄÁÚ½ÚµãÊıÁ¿
+		size_v nei_mod = degree % (MAX_LEN - 3);  
 		for (size_v i = 0; i < numblk; i++)
 		{
 			graph_blk* gblk = generate_new_blk(root);
 
-			// ´æ´¢Êı¾İ Ç°Ãæblk´æ´¢£¬Ç°ÃæµÄblk²»¿¼ÂÇbuffer£¬×î´ó´æ´¢ MAX_LEN - 3¸öneighbors
 			gblk->vcnt = 1;
 			gblk->buf[0] = id;
 			
-			gblk->buf[2] = MAX_LEN - 1;  // offset ´ÓÄ©Î»¿ªÊ¼
+			gblk->buf[2] = MAX_LEN - 1;  // offset 
 
-			size_v neicnt = MAX_LEN - 3; // ¶ÔÓÚµ¥¸ö¶¥µã£¬µ¥¸öblk×î¶àÄÜ´æÁÚ½ÚµãÊıÁ¿
-			size_v start_idx = MAX_LEN-1;  // ´ÓºóÍùÇ°´æ´¢
-			while ((neicnt--) && (pch = strtok(NULL, " "))) // ¼ÓÔØÁÚ½Úµã
+			size_v neicnt = MAX_LEN - 3; 
+			size_v start_idx = MAX_LEN-1;  
+			while ((neicnt--) && (pch = strtok(NULL, " "))) 
 			{
 				size_v nb = atoi(pch);
 				gblk->buf[start_idx] = nb;
@@ -64,34 +63,34 @@ void toVertexV(const WorkerParams& params, char* line, PMEMoid root)
 				start_idx--;
 			}
 			
-			if (i < numblk - 1) // ³ıÁË×îºóÒ»¸öblk£¬ÆäËûblkµÄnext_blk±£³Ö-1
+			if (i < numblk - 1) 
 			{
-				gblk->buf[1] = MAX_LEN - 3;  // µ±Ç°blk´æ´¢ÁËMAX_LEN - 3¸öÁÚ½Úµã,¼´´æÂúÁË
-				gblk->next_blk = gblk->blk_id + 1;  // È·¶¨ÖªµÀ»¹ĞèÒªĞÂ½¨Ò»¸öblk
+				gblk->buf[1] = MAX_LEN - 3;  
+				gblk->next_blk = gblk->blk_id + 1;  
 			}
-			else   // ×îºóÒ»¸öblk
+			else   
 			{
-				gblk->buf[1] = nei_mod;  //  ×îºóÒ»¸öblkÎ´´æÂú
+				gblk->buf[1] = nei_mod;  
 			}
 		}
 	}
-	else  // Ò»¸öblkÄÜ×°ÏÂ£¬ÓÅÏÈ´Ó idle_blk_vec ÖĞÑ¡È¡blk½øĞĞ´æ´¢
+	else  
 	{
 		size_v blkIdx = findIdleBlk(idle_blk_vec, degree);
-		if (blkIdx != -1)  // ÕÒµ½ºÏÊÊµÄblk
+		if (blkIdx != -1)  
 		{
 			graph_blk* gblk = graph_blk_vec[blkIdx];
 			size_v start_idx = gblk->vcnt * 3;
 			size_v preoff = gblk->buf[start_idx - 1];
 			size_v predegree = gblk->buf[start_idx - 2];
 			size_v prebuf = ceil((float)predegree * BUF_PRO);
-			size_v offset = preoff - predegree - prebuf;  // Ç°Ò»¸ö¶¥µãµÄÆğÊ¼offset - degree - buffer³¤¶È£¬¼´Îªµ±Ç°¶¥µãÆğÊ¼offset
+			size_v offset = preoff - predegree - prebuf;  
 
 			gblk->buf[start_idx] = id;
 			gblk->buf[start_idx + 1] = degree;
 			gblk->buf[start_idx + 2] = offset;
 
-			while (pch = strtok(NULL, " ")) // ¼ÓÔØÁÚ½Úµã
+			while (pch = strtok(NULL, " ")) 
 			{
 				size_v nb = atoi(pch);
 				gblk->buf[offset] = nb;
@@ -102,16 +101,16 @@ void toVertexV(const WorkerParams& params, char* line, PMEMoid root)
 			size_v cur_cap = degree + ceil((float)degree * BUF_PRO);
 			gblk->next_pos -= cur_cap;
 		}
-		else  // ĞÂ½¨Ò»¸öĞÂµÄblk
+		else  
 		{
 			graph_blk* gblk = generate_new_blk(root);
 
 			gblk->buf[0] = id;
 			gblk->buf[1] = degree;
 			size_v offset = MAX_LEN - 1;
-			gblk->buf[2] = offset;  //  ÆğÊ¼´æ´¢Î»ÖÃ
+			gblk->buf[2] = offset;  
 
-			while (pch = strtok(NULL, " ")) // ¼ÓÔØÁÚ½Úµã
+			while (pch = strtok(NULL, " ")) 
 			{
 				size_v nb = atoi(pch);
 				gblk->buf[offset] = nb;
@@ -136,7 +135,7 @@ void toVertexV(const WorkerParams& params, char* line, PMEMoid root)
 
 void toEdge(const WorkerParams& params, char* line)
 {
-	// Êı¾İ¸ñÊ½£ºsrc_id des_id
+	// src_id des_id
 	new_edge e;
 	char* pch;
 	pch = strtok(line, " ");
@@ -150,9 +149,9 @@ void toEdge(const WorkerParams& params, char* line)
 	if (src == des)
 		return;
 
-	e.src = src; // ×ó²àÁ¬Ğø£¬ÓÒ²àÀëÉ¢
+	e.src = src; 
 	e.des = des;
-	// e.src = des;  // ÓÒ²àÁĞÁ¬Ğø£¬×ó²àÀëÉ¢
+	// e.src = des; 
 	// e.des = src;
 
 	e.statue = 1; 
@@ -167,7 +166,7 @@ void toEdge(const WorkerParams& params, char* line)
 
 void toEdgeMix(const WorkerParams& params, char* line)
 {
-	// Êı¾İ¸ñÊ½£ºsrc_id des_id
+	// src_id des_id
 	new_edge e;
 	char* pch;
 	pch = strtok(line, " ");
@@ -192,10 +191,10 @@ void toEdgeMix(const WorkerParams& params, char* line)
 	if (src == des)
 		return;
 
-	e.src = src; // ×ó²àÁ¬Ğø£¬ÓÒ²àÀëÉ¢
+	e.src = src; 
 	e.des = des;
 	e.statue = status;
-	// e.src = des;  // ÓÒ²àÁĞÁ¬Ğø£¬×ó²àÀëÉ¢
+	// e.src = des; 
 	// e.des = src;
 
 	// e.statue = 1; 
@@ -218,9 +217,9 @@ void load_graph(const WorkerParams& params, PMEMoid root)
 	ifstream ori_file(file_path.c_str());
 	string line;
 	int linecnt = 0;
-	if (ori_file) // ÓĞ¸ÃÎÄ¼ş  
+	if (ori_file) 
 	{
-		while (getline(ori_file, line)) // lineÖĞ²»°üÀ¨Ã¿ĞĞµÄ»»ĞĞ·û  
+		while (getline(ori_file, line))   
 		{
 			if (line.size() != 0)
 			{
@@ -236,7 +235,7 @@ void load_graph(const WorkerParams& params, PMEMoid root)
 		ori_file.close();
 		//	cout << "worker: " << _my_rank << " load data over!!!" << endl;
 	}
-	else // Ã»ÓĞ¸ÃÎÄ¼ş  
+	else   
 	{
 		cout << params.input_path.c_str() << endl;
 		exit(-1);
@@ -244,7 +243,6 @@ void load_graph(const WorkerParams& params, PMEMoid root)
 
 	double end_t = get_current_time();
 	cout << "Load graph time: " << end_t - start_t << endl;
-	// ¹¹½¨¶¥µãidÓë¶ÔÓ¦Î»ÖÃË÷Òı(ºÜÖØÒª)
 	//init(vertices);
 }
 
@@ -258,9 +256,9 @@ void load_graph_dram(const WorkerParams& params)
 	ifstream ori_file(file_path.c_str());
 	string line;
 	int64_t linecnt = 0;
-	if (ori_file) // ÓĞ¸ÃÎÄ¼ş  
+	if (ori_file)   
 	{
-		while (getline(ori_file, line)) // lineÖĞ²»°üÀ¨Ã¿ĞĞµÄ»»ĞĞ·û  
+		while (getline(ori_file, line))   
 		{
 			if (line.size() != 0)
 			{
@@ -280,7 +278,7 @@ void load_graph_dram(const WorkerParams& params)
 		cout << "total lines: " << linecnt << endl;
 		//	cout << "worker: " << _my_rank << " load data over!!!" << endl;
 	}
-	else // Ã»ÓĞ¸ÃÎÄ¼ş  
+	else   
 	{
 		cout << params.input_path.c_str() << endl;
 		exit(-1);
@@ -288,7 +286,6 @@ void load_graph_dram(const WorkerParams& params)
 
 	double end_t = get_current_time();
 	cout << "Load graph from disk time: " << end_t - start_t << endl;
-	// ¹¹½¨¶¥µãidÓë¶ÔÓ¦Î»ÖÃË÷Òı(ºÜÖØÒª)
 	//init(vertices);
 }
 
@@ -328,32 +325,28 @@ void print_csr(graph_blk* blk)
 
 void sorted_csr_pm(const WorkerParams& params, graph_blk* blk)  
 {
-	/*
-		sorted¶¨Òå£ºÊ×ÏÈ¶Ô±Èsrc´óĞ¡£¬È»ºó¶Ô±Èdes´óĞ¡
-	*/
 	double start_t = get_current_time();
 	blk->blk_id = 0;
 	blk->vcnt = 0;
 
-	blk->next_pos = MAX_LEN - 1; // ´Ó×îºóÒ»Î»¿ªÊ¼´æ´¢ÁÚ½ÚµãĞÅÏ¢
+	blk->next_pos = MAX_LEN - 1; 
 	for (int edgeIdx = 0; edgeIdx < global_edge_vec.size(); edgeIdx++)
 	{
 		new_edge p = global_edge_vec[edgeIdx];
 		size_v src = p.src;
 		size_v des = p.des;
 
-		// ÔÚÒ»¸öÊı×éÖĞÊµÏÖCSR´æ´¢
-		if (blk->vcnt == 0)  // ¼ÓÈëµÚÒ»Ìõ±ß
+		if (blk->vcnt == 0)  
 		{
 			int32_t startIdx = 2 * blk->vcnt;
 			blk->buf[startIdx] = src;
 			blk->buf[startIdx+1] = blk->next_pos;
 			blk->buf[blk->next_pos] = des;
 
-			startIdx += 2; // Ã¿¸ö¶¥µã´æ´¢idºÍoffset
+			startIdx += 2; 
 
 			blk->vcnt += 1;
-			blk->next_pos--; // ÏÂ´Î´æ´¢ÁÚ½Úµã£¬--ÊÇÒòÎªÁÚ½Úµã´æ´¢´ÓºóÍùÇ°
+			blk->next_pos--; 
 			continue;
 		}
 
@@ -361,32 +354,31 @@ void sorted_csr_pm(const WorkerParams& params, graph_blk* blk)
 
 		for (int32_t vidx = 0; vidx < blk->vcnt; vidx++)
 		{
-			/* ¿ÉÌæ»»Îª¶ş·ÖËÑË÷srcÎ»ÖÃ */
+			
 			int32_t vid = blk->buf[2 * vidx];
 			int32_t nextvid = blk->buf[2 * vidx + 2];
 			int32_t nextoff = blk->buf[2 * vidx + 3];
 			if (src == vid)  
 			{
-				/* ´æÔÚ¸Ãsrc£¬Ö»¸Ä±äneighbor lish¼´¿É */
-				int32_t nextBeginIdx = blk->buf[2 * vidx + 3]; // ÏÂÒ»¶¥µãµÄÁÚ½ÚµãÆğÊ¼Î»ÖÃ
-				if (vidx < (blk->vcnt-1)) // ²»ÊÇÅÅÔÚ×îºóÒ»¸öµÄsrc
+			
+				int32_t nextBeginIdx = blk->buf[2 * vidx + 3]; 
+				if (vidx < (blk->vcnt-1)) 
 				{
-					int32_t tmpOff = blk->buf[2 * vidx + 1];  // ÒÑ´æ×îºóÒ»¸ö¶¥µãµÄÆğÊ¼ÁÚ½ÚµãÎ»ÖÃ
+					int32_t tmpOff = blk->buf[2 * vidx + 1];  
 					int32_t neiIdx = tmpOff;
 					for (; neiIdx > nextBeginIdx; neiIdx--)
 					{
-						if (des < blk->buf[neiIdx])  // ´ÓÓÒÍù×ó£¬ÉıĞòÅÅÁĞ
+						if (des < blk->buf[neiIdx])  
 						{
-							//  ËùÓĞºóĞøÔªËØºóÒÆÒ»Î»
+							
 							for (int32_t j = blk->next_pos; j < neiIdx; j++)
 							{
 								blk->buf[j] = blk->buf[j+1];
 							}
 							blk->buf[neiIdx] = des;
-							blk->next_pos--; // ÏÂÒ»¸ö¿ÕÎ»
+							blk->next_pos--; 
 							break;
 						}
-						// ĞèÒª²åÈëµ±Ç°¶¥µãÁÚ½Ó±í×îºóÒ»¸öÎ»ÖÃ
 						if ((neiIdx == nextBeginIdx+1) && (des > blk->buf[nextBeginIdx+1]))
 						{
 							for (int32_t j = blk->next_pos; j < nextBeginIdx; j++)
@@ -394,61 +386,58 @@ void sorted_csr_pm(const WorkerParams& params, graph_blk* blk)
 								blk->buf[j] = blk->buf[j+1];
 							}
 							blk->buf[nextBeginIdx] = des;
-							blk->next_pos--; // ÏÂÒ»¸ö¿ÕÎ»
+							blk->next_pos--; 
 						}
 					}
-					// µ±Ç°¶¥µãÖ®ºóËùÓĞ¶¥µãµÄOffset¶¼ĞèÒª-1£¬¼´×óÒÆÒ»Î»
+					
 					for (int32_t remainvIdx = vidx+1; remainvIdx < blk->vcnt; remainvIdx++)
 					{
 						blk->buf[2*remainvIdx+1] -= 1;
 					}
 				}
-				else // µ±Ç°srcÅÅÔÚ×îºóÒ»¸ö£¬Ö±½ÓÔÚ¼ÓÈëÔªËØ²¢ÅÅĞò¼´¿É. vidx = blk->vcnt-1
+				else 
 				{
-					int32_t tmpOff = blk->buf[2 * vidx + 1];  // ÒÑ´æ×îºóÒ»¸ö¶¥µãµÄÆğÊ¼ÁÚ½ÚµãÎ»ÖÃ
+					int32_t tmpOff = blk->buf[2 * vidx + 1];  
 					int32_t neiIdx = tmpOff;
 					for (; neiIdx > blk->next_pos; neiIdx--)
 					{
-						if (des < blk->buf[neiIdx])  // ´ÓÓÒÍù×ó£¬ÉıĞòÅÅÁĞ
+						if (des < blk->buf[neiIdx])  
 						{
-							//  ËùÓĞºóĞøÔªËØºóÒÆÒ»Î»
 							for (int32_t j = blk->next_pos; j < neiIdx; j++)
 							{
 								blk->buf[j] = blk->buf[j+1];
 							}
 							blk->buf[neiIdx] = des;
-							blk->next_pos--; // ÏÂÒ»¸ö¿ÕÎ»
+							blk->next_pos--; 
 							break;
 						}
 
 						if ((neiIdx == blk->next_pos+1) && (des > blk->buf[blk->next_pos+1]))
 						{
 							blk->buf[blk->next_pos] = des;
-							blk->next_pos--; // ÏÂÒ»¸ö¿ÕÎ»
+							blk->next_pos--; 
 						}
 					}
 				}
 				break;
 			}
-			else if (src>vid && vidx==(blk->vcnt-1))  // ÎŞÓĞĞ§nextid
+			else if (src>vid && vidx==(blk->vcnt-1))  
 			{
-				/* µ±Ç°²»´æÔÚ¸Ãsrc£¬ĞÂÔösrc¼°ÆäÁÚ½Úµã£¬Ö»Ğè×¢ÒâsrcµÄÅÅĞò£¬²åÔÚÄ©Î² */
 				blk->buf[2*blk->vcnt] = src;
 				blk->buf[2*blk->vcnt+1] = blk->next_pos;
 
 				blk->buf[blk->next_pos] = des;
-				blk->next_pos--; // ÏÂÒ»¸ö¿ÕÎ»
+				blk->next_pos--; 
 				blk->vcnt += 1;
 				break;
 			}
-			else if (src>vid && src<nextvid) // ´æÔÚÓĞĞ§nextid
+			else if (src>vid && src<nextvid) 
 			{
-				/* µ±Ç°²»´æÔÚ¸Ãsrc£¬ĞÂÔösrc¼°ÆäÁÚ½Úµã£¬Ö»Ğè×¢ÒâsrcµÄÅÅĞò, ²åÔÚÒÑÓĞ¶¥µãÖĞ¼ä */
 				// cout << "test--- vidx: " << vidx << " vcnt: " << blk->vcnt << endl;
-				for (int32_t j = blk->vcnt; j>vidx; j--) // ÒÆ¶¯¶¥µãidºÍoffsetÎ»ÖÃ
+				for (int32_t j = blk->vcnt; j>vidx; j--) 
 				{
 					blk->buf[2*j] = blk->buf[2*j-2];  // id
-					blk->buf[2*j+1] = blk->buf[2*j-1]-1;  // offset£¬ÒòÎªĞèÒª²åÈëÒ»¸öĞÂÖµ£¬ĞèÒªÔÙ-1
+					blk->buf[2*j+1] = blk->buf[2*j-1]-1;  
 				}
 
 				blk->buf[2*vidx+2] = src;
@@ -459,7 +448,7 @@ void sorted_csr_pm(const WorkerParams& params, graph_blk* blk)
 					blk->buf[j] = blk->buf[j+1];
 				}
 				blk->buf[nextoff] = des;
-				blk->next_pos--; // ÏÂÒ»¸ö¿ÕÎ»
+				blk->next_pos--; 
 				blk->vcnt += 1;
 
 				// print_csr(blk);
@@ -504,11 +493,7 @@ void generate_vertex_index_meta(vector<graph_blk*> graphBlkVec, vector<VIDX_PAIR
 
 size_v detect_buffer(graph_blk* gblk, size_v v_offset)
 {
-	/*
-		ÑéÖ¤Ò»¸ö¶¥µãµÄbufferÊÇ·ñ¹»µÄ·½·¨£º
-			1. ¶¥µãoffset - degree £¿= next v offset
-			2. Ä©¶Ë¶¥µãĞèÒªÌØÊâ¿¼ÂÇ
-	*/
+
 	size_v contributor_offset = -1;
 	size_v hop = 1;
 	size_v forward_flag = 1;
@@ -519,9 +504,9 @@ size_v detect_buffer(graph_blk* gblk, size_v v_offset)
 	{
 		if (forward_flag == 1)
 		{
-			cur_offset = v_offset + hop;  // Äâ´ÓµÚcur_offset¶¥µã´¦½èbuffer
+			cur_offset = v_offset + hop;  
 
-			if (cur_offset == gblk->vcnt - 1)   // ×îºóÒ»¸ö¶¥µã´¦ÊÇ·ñÓĞ¿ÕÓàslot
+			if (cur_offset == gblk->vcnt - 1)   
 			{
 			//	if (gblk->buf[cur_offset * 3 + 2] - gblk->buf[cur_offset * 3 + 1] > cur_offset * 3 + 2)
 				if (gblk->buf[cur_offset * 3 + 2] - gblk->buf[cur_offset * 3 + 1] > gblk->next_pos)
@@ -531,13 +516,13 @@ size_v detect_buffer(graph_blk* gblk, size_v v_offset)
 			}
 			else
 			{
-				if (cur_offset >= gblk->vcnt)  // ´Ë´¦offset´Ó0¿ªÊ¼¼ÆÊı£¬µ½´ïvcntÊ±ÒÑ¾­³¬³öµ±Ç°blk´æ´¢µÄ×Ü¶¥µãÊı
+				if (cur_offset >= gblk->vcnt)  
 				{
-					forward_flag = -1;  // ²»ÔÙÍùºóÕÒ
+					forward_flag = -1;  
 				}
 				else
 				{
-					if (gblk->buf[cur_offset * 3 + 2] - gblk->buf[cur_offset * 3 + 1] > gblk->buf[(cur_offset + 1) * 3 + 2])  // cur_offsetÓĞbuffer
+					if (gblk->buf[cur_offset * 3 + 2] - gblk->buf[cur_offset * 3 + 1] > gblk->buf[(cur_offset + 1) * 3 + 2])  // cur_offsetæœ‰buffer
 					{
 						return cur_offset;
 					}
@@ -550,11 +535,11 @@ size_v detect_buffer(graph_blk* gblk, size_v v_offset)
 			cur_offset = v_offset - hop;
 			if (cur_offset < 0)
 			{
-				backward_flag = -1;  // ²»ÔÙÍùÇ°ÕÒ
+				backward_flag = -1;  
 			}
 			else
 			{
-				if (gblk->buf[cur_offset * 3 + 2] - gblk->buf[cur_offset * 3 + 1] > gblk->buf[(cur_offset + 1) * 3 + 2])  // cur_offsetÓĞbuffer
+				if (gblk->buf[cur_offset * 3 + 2] - gblk->buf[cur_offset * 3 + 1] > gblk->buf[(cur_offset + 1) * 3 + 2])  // cur_offsetæœ‰buffer
 				{
 					return cur_offset;
 				}
@@ -563,7 +548,7 @@ size_v detect_buffer(graph_blk* gblk, size_v v_offset)
 
 		if (forward_flag == -1 && backward_flag == -1)
 		{
-			return -1;  // Ã»ÓĞ¿ÕÓàbuffer slot
+			return -1;  
 		}
 		hop++;
 	}
@@ -571,26 +556,22 @@ size_v detect_buffer(graph_blk* gblk, size_v v_offset)
 
 void exchange_slot(PMEMobjpool* pop, graph_blk* gblk, size_v owner, size_v curv, size_v value)
 {
-	/*
-		curv£ºµ±Ç°ĞèÒª²åÈëÁÚ½ÚµãµÄ¶¥µã£¨pos£¬gblkÖĞµÄµÚ¼¸¸ö¶¥µã£©
-		owner£ºÀëcurv×î½üµÄÓµÓĞ¿ÕÓàbuffer slotµÄ¶¥µã£¨pos£©
-		value£ºĞèÒª²åÈëcurvµÄÁÚ½Úµãid
-	*/
-	size_v stride; // slot×óÒÆ»¹ÊÇÓÒÒÆ
+
+	size_v stride; 
 	size_v curoff = gblk->buf[curv * 3 + 2];
 	size_v curdeg = gblk->buf[curv * 3 + 1];
 
 
 	if (owner > curv) 
 	{
-		stride = 1;  // ownerÔÚµ±Ç°¶¥µãÓÒ²à£¬¿ÕÓàslotÔÚµ±Ç°¶¥µã×ó²à
+		stride = 1;  
 	}
 	else
 	{
-		stride = -1; // ownerÔÚµ±Ç°¶¥µã×ó²à£¬¿ÕÓàslotÔÚµ±Ç°¶¥µãÓÒ²à
+		stride = -1; 
 	}
 
-	if (stride == 1) // (ÁÚ½ÚµãÁĞ±íÔÚ×ó²à)
+	if (stride == 1)
 	{
 		while (owner != curv)  // move the slot
 		{
@@ -606,13 +587,13 @@ void exchange_slot(PMEMobjpool* pop, graph_blk* gblk, size_v owner, size_v curv,
 	}
 	else
 	{
-		owner = owner + 1; // ×ó²à¶¥µã£¨offset¸ü´ó£©´ÓÏÂÒ»ÁÚ½Úµã¿ªÊ¼ÒÆ¶¯slot (ÁÚ½ÚµãÁĞ±íÔÚÓÒ²à)
+		owner = owner + 1; 
 		while (owner <= curv)
 		{
 			size_v owner_off = gblk->buf[owner * 3 + 2];
-			size_v lastNeiPos = gblk->buf[owner * 3 + 2] - gblk->buf[owner * 3 + 1] + 1;  // owner×îºóÒ»¸öÁÚ½Úµã´æ´¢µÄÎ»ÖÃ£ºoffset - degree + 1
+			size_v lastNeiPos = gblk->buf[owner * 3 + 2] - gblk->buf[owner * 3 + 1] + 1;  // offset - degree + 1
 
-			gblk->buf[owner_off + 1] = gblk->buf[lastNeiPos];  // ×îºóÒ»¸öÁÚ½Úµã¸´ÖÆµ½ÓÒ²àÒ»¸ö¿ÕslotÖĞ
+			gblk->buf[owner_off + 1] = gblk->buf[lastNeiPos];  
 			pmemobj_persist(pop, &(gblk->buf[owner_off + 1]), sizeof(size_v));
 			gblk->buf[owner * 3 + 2] = owner_off + 1;
 			pmemobj_persist(pop, &(gblk->buf[owner * 3 + 2]), sizeof(size_v));
@@ -637,31 +618,28 @@ void update_vertex_index(vector<VIDX_PAIR>& vertexIdxMata, graph_blk* target_blk
 
 void remalloc_vertex(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMata, vector<idle_blk*> &update_blk_vec, graph_blk* gblk, size_v vertex_index)
 {
-	/*
-		½«´æ´¢²»ÏÂµÄ¶¥µã´æ´¢ÖÁÆäËûblkÖĞ (gblkÖĞµÄµÚvertex_index¸ö)
-	*/
 	size_v vid = gblk->buf[vertex_index * 3];
 	size_v degree = gblk->buf[vertex_index * 3 + 1];
 	size_v ori_offset = gblk->buf[vertex_index * 3 + 2];
 
-	size_v blkIdx = findIdleBlk(update_blk_vec, degree);  // ´Ë´¦ÕÒbufferĞèÒªÖØĞÂ¸üĞÂ×îºóÒ»¸ö¶¥µãÂúbuffer×´Ì¬
+	size_v blkIdx = findIdleBlk(update_blk_vec, degree);  
 //	size_v blkIdx = findIdleBlkInsert(idle_blk_map, degree);
-	if (blkIdx != -1)  // ÕÒµ½ºÏÊÊµÄblk
+	if (blkIdx != -1)  
 	{
 		graph_blk* target_blk = graph_blk_vec[blkIdx];
-		size_v start_idx = target_blk->vcnt * 3;  // ¶¥µãÊı×÷ÎªË÷ÒıÎ»ÖÃ
+		size_v start_idx = target_blk->vcnt * 3;  
 		size_v preoff = target_blk->buf[start_idx - 1];
 		size_v predegree = target_blk->buf[start_idx - 2];
 
-	//	size_v prebuf = ceil((float)predegree * BUF_PRO);  // ´Ë´¦buffer ²»ºÃÈ·¶¨
-	//	size_v offset = preoff - predegree - prebuf;  // Ç°Ò»¸ö¶¥µã(×îºóÒ»¸ö¶¥µã)µÄÆğÊ¼preoff - degree - buffer³¤¶È£¬¼´Îªµ±Ç°¶¥µãÆğÊ¼offset
-		size_v offset = target_blk->next_pos;  // ÆäÊµÌî³äÁÚ½ÚµãµÄÎ»ÖÃ
+	//	size_v prebuf = ceil((float)predegree * BUF_PRO);  
+	//	size_v offset = preoff - predegree - prebuf;  
+		size_v offset = target_blk->next_pos;  
 
 		target_blk->buf[start_idx] = vid;
 		pmemobj_persist(pop, &(target_blk->buf[start_idx]), sizeof(size_v));
 		target_blk->buf[start_idx + 1] = degree;
 		pmemobj_persist(pop, &(target_blk->buf[start_idx + 1]), sizeof(size_v));
-		target_blk->buf[start_idx + 2] = offset;  // ÔÚ¸ÃblkµÄoffset´¦¿ªÊ¼´æ´¢ÁÚ½Úµã
+		target_blk->buf[start_idx + 2] = offset;  
 		pmemobj_persist(pop, &(target_blk->buf[start_idx + 2]), sizeof(size_v));
 
 		for (size_v neiIdx = 0; neiIdx < degree; neiIdx++)
@@ -674,14 +652,14 @@ void remalloc_vertex(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexId
 		pmemobj_persist(pop, &(target_blk->vcnt), sizeof(size_v));
 
 		size_v tmp_cap = degree + ceil((float)BUF_PRO * degree);
-		target_blk->next_pos -= tmp_cap;  // Õâ¸ö²»ĞèÒªpersistent
+		target_blk->next_pos -= tmp_cap;  
 
-		update_vertex_index(vertexIdxMata, target_blk, vid);  // ¸üĞÂ¶¥µãË÷Òı
+		update_vertex_index(vertexIdxMata, target_blk, vid);  
 
 		
 		//print_array(target_blk->buf, MAX_LEN);
 	}
-	else  // ĞÂ½¨Ò»¸öĞÂµÄblk
+	else  
 	{
 		graph_blk* target_blk = generate_new_blk(root);
 
@@ -691,7 +669,7 @@ void remalloc_vertex(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexId
 		pmemobj_persist(pop, &(target_blk->buf[1]), sizeof(size_v));
 
 		size_v offset = MAX_LEN - 1;
-		target_blk->buf[2] = offset;  //  ÆğÊ¼´æ´¢Î»ÖÃ
+		target_blk->buf[2] = offset;  
 		pmemobj_persist(pop, &(target_blk->buf[2]), sizeof(size_v));
 
 		for (size_v neiIdx = 0; neiIdx < degree; neiIdx++)
@@ -714,24 +692,20 @@ void remalloc_vertex(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexId
 		idle_blk* iblk = (idle_blk*)malloc(sizeof(idle_blk));  // in DRAM
 
 		iblk->blk_idx = target_blk->blk_id;
-		iblk->max_cap = capmod; // ¿ÉÄÜÎª¸ºÊı
-		iblk->next_pos = MAX_LEN - 1 - (cap - 3);  //  ÏÂÒ»¸ö¿É´æ´¢ÁÚ½ÚµãµÄÎ»ÖÃ
+		iblk->max_cap = capmod; 
+		iblk->next_pos = MAX_LEN - 1 - (cap - 3);  
 		update_blk_vec.push_back(iblk);
 
 		//print_array(target_blk->buf, MAX_LEN);
 		//cout << target_blk->next_pos << endl;
 
-		update_vertex_index(vertexIdxMata, target_blk, vid);  // ¸üĞÂ¶¥µãË÷Òı
+		update_vertex_index(vertexIdxMata, target_blk, vid);  
 	}
 }
 
 void update_blk(PMEMobjpool* pop, graph_blk* gblk, size_v max_vidx, size_v buffer_cnt)
 {
-	/*
-		¶ÔÓÚÇ°max_vidx¸ö¶¥µã½øĞĞbufferÖØ·ÖÅä
-		´Ó×îºóÒ»¸ö¶¥µã¿ªÊ¼ÒÆ¶¯
-		ÒÆ¶¯Íê³Éºó¸üĞÂµ±Ç°blk´æ´¢µÄ¶¥µãÊı
-	*/
+
 	gblk->vcnt = max_vidx + 1;
 	pmemobj_persist(pop, &(gblk->vcnt), sizeof(size_v));
 
@@ -739,21 +713,21 @@ void update_blk(PMEMobjpool* pop, graph_blk* gblk, size_v max_vidx, size_v buffe
 	{
 		size_v degree = gblk->buf[vidx * 3 + 1];
 		size_v offset = gblk->buf[vidx * 3 + 2];
-		size_v lastNeiPos = offset - degree + 1;  // ×îºóÒ»¸öÁÚ½Úµã´æ´¢µÄÎ»ÖÃ
-		size_v tmpBufSize = ceil((float)degree * BUF_PRO);  // µ±Ç°¶¥µãËùĞèÒªµÄbuffer size
+		size_v lastNeiPos = offset - degree + 1;  
+		size_v tmpBufSize = ceil((float)degree * BUF_PRO);  
 		buffer_cnt -= tmpBufSize;
 
-		size_v new_offset = offset - buffer_cnt;  // ¿Õ³öbuffer¸øÊ£Óà¶¥µã £¨×îºóÒ»¸ö¶¥µãµÄÁÚ½ÚµãÕûÌå×óÒÆbuffer_cnt¸öslot£©
-		// ²»Ò»¶¨ĞèÒªÈ«²¿ÒÆ¶¯£¬ÒòÎªÁÚ½ÚµãÊıÁ¿¿ÉÄÜ´óÓÚÊ£Óàbuffer³¤¶È£¬´ËÇé¿öÖ»ĞèÒÆ¶¯²¿·ÖÁÚ½Úµã
+		size_v new_offset = offset - buffer_cnt;  
+		
 		if (new_offset > lastNeiPos)
 		{
 			for (size_v neiIdx = 0; neiIdx < buffer_cnt; neiIdx++)
 			{
-				gblk->buf[lastNeiPos - 1 - neiIdx] = gblk->buf[offset - neiIdx];  // Ö»ĞèÒª°ÑÇ°ÖØºÏ²¿·ÖÒÆ¶¯Ö»bufferÇø¼´¿É£¬±ÜÃâÊı¾İ¸²¸Ç
+				gblk->buf[lastNeiPos - 1 - neiIdx] = gblk->buf[offset - neiIdx];  
 				pmemobj_persist(pop, &(gblk->buf[lastNeiPos - 1 - neiIdx]), sizeof(size_v));
 			}
 		}
-		else   // ËùÓĞÁÚ½Úµã¶¼ĞèÒªÒÆ¶¯
+		else   
 		{
 			for (size_v neiIdx = 0; neiIdx < degree; neiIdx++)
 			{
@@ -761,27 +735,23 @@ void update_blk(PMEMobjpool* pop, graph_blk* gblk, size_v max_vidx, size_v buffe
 				pmemobj_persist(pop, &(gblk->buf[new_offset - neiIdx]), sizeof(size_v));
 			}
 		}
-		gblk->buf[vidx * 3 + 2] = new_offset;  // ËùÓĞÁÚ½ÚµãÒÆ¶¯Íê±Ï ¸üĞÂoffset
+		gblk->buf[vidx * 3 + 2] = new_offset;  
 		pmemobj_persist(pop, &(gblk->buf[vidx * 3 + 2]), sizeof(size_v));
 
 		if (vidx == max_vidx)
 		{
-			gblk->next_pos = new_offset - degree - tmpBufSize;  // ×îºóÒ»¸ö¶¥µãÈ·¶¨Î»ÖÃºó¼´¿ÉÈ·¶¨µ±Ç°blkµÄnext_pos
+			gblk->next_pos = new_offset - degree - tmpBufSize;  
 		}
 	}
 
 	//print_array(gblk->buf, MAX_LEN);
 /*	gblk->vcnt = max_vidx + 1;
-	pmemobj_persist(pop, &(gblk->vcnt), sizeof(size_v));*/   // ÒÆ¶¯Íê³Éºó¸üĞÂµ±Ç°blk´æ´¢µÄ¶¥µãÊı
+	pmemobj_persist(pop, &(gblk->vcnt), sizeof(size_v));*/   
 }
 
 void generate_and_split(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMata, vector<idle_blk*>& update_blk_vec, graph_blk* gblk, size_v src, size_v des)
 {
-	/*
-		step 0: È·¶¨µ±Ç°gblkÄÜ´æ´¢µÄ×î¶à¶¥µãÊı
-		step 1: ½«ÆäËû¶¥µã·ÖÅäµ½ÆäËûÓĞ¿ÕÏĞµÄblkÖĞ
-		step 2: ÎŞ¿ÕÓàblkÔòÉêÇëĞÂµÄblk£¬²¢½«¶¥µã·ÖÅäÖÁĞÂblkÖĞ
-	*/
+
 	size_v total_occupation = 0;
 	size_v buffer_cnt = 0;
 	size_v max_vidx = 0;
@@ -792,7 +762,7 @@ void generate_and_split(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& verte
 		total_occupation += occupation;
 		if (total_occupation > MAX_LEN)
 		{
-			max_vidx = vidx - 1;  // Ö»ÄÜÂú×ãµ½Ç°Ò»¸ö¶¥µãµÄ´æ´¢ĞèÇó
+			max_vidx = vidx - 1;  
 			break;
 		}
 		buffer_cnt += ceil((float)degree * BUF_PRO);
@@ -807,16 +777,14 @@ void generate_and_split(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& verte
 
 	//cout << "remalloc_vertex complete !!!" << endl;
 
-	// µ±ËùÓĞ¶¥µãÖØĞÂ·ÖÅäÍê³Éºó£¬¸üĞÂÔ­gblkÖĞµÄ¶¥µãÊı£¬²¢ÖØĞÂ·ÖÅä¿ÕÓàslot(°´Ğè·ÖÅä),¼´µÚ0-max_vidxµÄ¶¥µã½øĞĞbufferÖØ·ÖÅä£¨¸ù¾İBUF_PRO£©
 	update_blk(pop, gblk, max_vidx, buffer_cnt);
 
 	//print_array(gblk->buf, MAX_LEN);
 	//cout << "update_blk complete !!!" << endl;
 
-	// Ö±½Ó²åÈëĞÂÁÚ½Úµã£¬´ËÊ±×Ô¼ºbuffer³ä×ã£¬Ö±½Ó²åÈë¼´¿É
 	VIDX_PAIR srcp = vertexIdxMata[src];
 	size_v blk_id = srcp.first;
-	size_v v_offset = srcp.second;  // ´æ´¢µÄµÚ¼¸¸ö¶¥µã
+	size_v v_offset = srcp.second;  
 	graph_blk* gblk_new = graph_blk_vec[blk_id];
 	size_v vidx = v_offset * 3;
 	size_v degree = gblk_new->buf[vidx + 1];
@@ -824,20 +792,14 @@ void generate_and_split(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& verte
 
 	gblk_new->buf[nei_offset - degree] = des;
 	pmemobj_persist(pop, &(gblk_new->buf[nei_offset - degree]), sizeof(size_v));
-	gblk->buf[vidx + 1] += 1;  // degree¼Ó1
+	gblk->buf[vidx + 1] += 1;  // degreeåŠ 1
 	pmemobj_persist(pop, &(gblk->buf[vidx + 1]), sizeof(size_v));
 
 }
 
 void super_vertex_insertion(PMEMobjpool* pop, PMEMoid root, graph_blk* gblk, size_v value)
 {
-	/*
-	* gblk£º´æ´¢ĞèÒª²åÈëĞÂÁÚ½ÚµãµÄ¶¥µãËùÔÚµÄblk
-	* value£º´ı²åÈëµÄÖµ
-		1. ¸ù¾İµ±Ç°blkËù´æ´¢µÄÁÚ½ÚµãÊıÁ¿ÅĞ¶¨ÊÇ·ñ´Óµ±Ç°blk²åÈëĞÂÁÚ½Úµã
-		2. µ±Ç°blk´æÂúÁË£¬¸ù¾İnext_blk´ÓÏÂÒ»blkÖĞÑ°ÕÒ¿ÕÓàslot
-		3. ²éÕÒµ½×îºóÒ»¸öblk£¬¼´next_blkÎª-1£¬ÈõÒ²´æÂúÁËÔòĞÂ½¨Ò»¸öĞÂblk£¬²¢½²µ±Ç°blkµÄnext_blkĞŞ¸ÄÎª¶ÔÓ¦ĞÂblkºÅ
-	*/
+
 	size_v next_blk;
 	size_v degree;
 	graph_blk* cur_blk = gblk;
@@ -845,26 +807,26 @@ void super_vertex_insertion(PMEMobjpool* pop, PMEMoid root, graph_blk* gblk, siz
 	while (cur_blk->next_blk)
 	{
 		degree = cur_blk->buf[1];
-		if (degree == MAX_LEN - 3)  // ´æÂúÁË
+		if (degree == MAX_LEN - 3)  
 		{
 			next_blk = cur_blk->next_blk;
 			cur_blk = graph_blk_vec[next_blk];
 		}
 		else
 		{
-			break;  // µ±Ç°cur_blk´æÔÚ¿ÕÓàbuffer
+			break;  
 		}
 	}
 
-	if (cur_blk->next_blk == -1)  // ×îºóÒ»¸öblk£¬½øÒ»²½ÅĞ¶ÏÊÇ·ñÓĞ¿ÕÓàslot
+	if (cur_blk->next_blk == -1)  
 	{
 		degree = cur_blk->buf[1];
-		if (degree == MAX_LEN - 3)   // ´æÂúÁË£¬ĞèÒªĞÂ½¨ĞÂµÄblk
+		if (degree == MAX_LEN - 3)   
 		{
 			graph_blk* new_blk = generate_new_blk(root);
 			new_blk->buf[0] = cur_blk->buf[0];
 			new_blk->buf[1] = 1;
-			new_blk->buf[2] = MAX_LEN - 1;  // Ä©Î»
+			new_blk->buf[2] = MAX_LEN - 1;  
 			new_blk->buf[MAX_LEN - 1] = value;
 			pmemobj_persist(pop, new_blk, sizeof(graph_blk));
 			
@@ -880,7 +842,7 @@ void super_vertex_insertion(PMEMobjpool* pop, PMEMoid root, graph_blk* gblk, siz
 			pmemobj_persist(pop, &(cur_blk->buf[1]), sizeof(size_v));
 		}
 	}
-	else   // ±ØÈ»ÓĞ¿ÕÓàslot
+	else   
 	{
 		size_v offset = cur_blk->buf[2];
 		cur_blk->buf[offset - degree] = value;
@@ -892,22 +854,10 @@ void super_vertex_insertion(PMEMobjpool* pop, PMEMoid root, graph_blk* gblk, siz
 
 void insert_edge(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMata, vector<idle_blk*>& update_blk_vec, size_v src, size_v des)
 {
-	/*
-		* pop£ºÄÚ´æ³Ø£¬ÓÃÓÚ³Ö¾Ã´æ´¢Êı¾İ
-		* root£ºÓÃÓÚĞÂ½¨blk
-		* vertexIdxMata£º¸ù¾İ¶¥µãid²éÑ¯¶¥µãËùÔÚblk¼°Æ«ÒÆÁ¿v_offset
-		* update_blk_vec: ÓÃÓÚÔö±ßÀ©³äµÄĞÂblk¼¯ºÏ
-		* src/des: ½«des²åÈësrcµÄÁÚ½ÚµãÁĞ±íÖĞ
-	
-		* insert des into src
-			case 1: enough buffer
-			case 2: borrow from neighbors (maybe n-hop neighbors)
-			case 3: split block (re-malloc buffer according to BUF_PRO)
-			case 4: Õë¶Ôµ¥¶¥µãÎŞ·¨´æ´¢ÔÚµ¥¸öblkµÄÇé¿ö £¨´ıÍê³É£©
-	*/
+
 	VIDX_PAIR srcp = vertexIdxMata[src];
 	size_v blk_id = srcp.first;
-	size_v v_offset = srcp.second;  // ´æ´¢µÄµÚ¼¸¸ö¶¥µã
+	size_v v_offset = srcp.second;  
 	graph_blk* gblk = graph_blk_vec[blk_id];
 	size_v vidx = v_offset * 3;
 	size_v degree = gblk->buf[vidx + 1];
@@ -915,7 +865,6 @@ void insert_edge(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMat
 	size_v buffer_size = 0;
 	size_v next_offset = gblk->buf[vidx + 5];
 
-	// ÅĞ¶ÏÊÇ·ñÊÇ³¬¼¶¶¥µã£¨¶à¸öblk´æ´¢£©
 	if (gblk->next_blk != -1)
 	{
 		cout << "case 0: super vertex!" << endl;
@@ -924,14 +873,14 @@ void insert_edge(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMat
 		return;
 	}
 
-	if (v_offset + 1 < gblk->vcnt) // ²»ÊÇ×îºóÒ»¸ö¶¥µã
+	if (v_offset + 1 < gblk->vcnt) 
 	{
 		buffer_size = nei_offset - next_offset - degree;
 	}
 	else
 	{
-	//	buffer_size = nei_offset - degree - (v_offset + 2);  // ×îºóÒ»¸ö¶¥µã²åÈëÁËĞÂÁÚ½Úµã
-		buffer_size = nei_offset - degree - gblk->next_pos;  //  ×îºóÒ»¸ö¶¥µãµÄbuffer
+	//	buffer_size = nei_offset - degree - (v_offset + 2);  
+		buffer_size = nei_offset - degree - gblk->next_pos;  
 	}
 
 	if (buffer_size > 0)  // case 1
@@ -943,17 +892,17 @@ void insert_edge(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMat
 		gblk->buf[insert_pos] = des;
 		pmemobj_persist(pop, &(gblk->buf[insert_pos]), sizeof(size_v));
 
-		gblk->buf[vidx + 1] += 1;  // degree¼Ó1
+		gblk->buf[vidx + 1] += 1;  
 		pmemobj_persist(pop, &(gblk->buf[vidx + 1]), sizeof(size_v));
 	}
-	else  // buffer²»¹»ÁË
+	else  
 	{
 		// case 2: borrow from neighbors (maybe n-hop neighbors)
 
 		size_v owner_pos = detect_buffer(gblk, v_offset);
 		cout << "owner_pos: " << owner_pos << endl;
 
-		if (owner_pos != -1)  // ÕÒµ½¿ÕÓàslot
+		if (owner_pos != -1)  
 		{
 			cout << "case 2: borrow slots from neighbors!" << endl;
 
@@ -971,20 +920,15 @@ void insert_edge(PMEMobjpool* pop, PMEMoid root, vector<VIDX_PAIR>& vertexIdxMat
 
 void delete_edge(PMEMobjpool* pop, size_v src, size_v des, vector<VIDX_PAIR> vertexIdxMata)
 {
-	/*
-		delete des from src
-		½«ÒªÉ¾³ıµÄÁÚ½ÚµãÓë×îºóÒ»¸öÁÚ½Úµã¸ü»»Î»ÖÃ£¬²¢ĞŞ¸Äoffset
-		£¨×¢ÒâÇø±ğ¶Ô´ı³¬¼¶¶¥µã£©
-	*/
+
 	VIDX_PAIR srcp = vertexIdxMata[src];
 	size_v blk_id = srcp.first;
-	size_v v_offset = srcp.second;  // ´æ´¢µÄµÚ¼¸¸ö¶¥µã
+	size_v v_offset = srcp.second;  
 	graph_blk* gblk = graph_blk_vec[blk_id];
 	size_v vidx = v_offset * 3;
 	size_v degree = gblk->buf[vidx + 1];
 	size_v nei_offset = gblk->buf[vidx + 2];
 
-	// ´¦Àí³¬¼¶¶¥µã£ºÔÚ±»É¾³ıÁÚ½ÚµãËùÔÚblk½øĞĞÉ¾³ı¼´¿É£¬Ğè¸ü¸Äµ±Ç°blkµÄdegreeÖµ
 	if (gblk->next_blk != -1)
 	{
 		graph_blk* cur_blk = gblk;
@@ -998,10 +942,10 @@ void delete_edge(PMEMobjpool* pop, size_v src, size_v des, vector<VIDX_PAIR> ver
 			{
 				if (cur_blk->buf[nei_offset - neiIdx] == des)
 				{
-					cur_blk->buf[nei_offset - neiIdx] = cur_blk->buf[nei_offset - degree + 1]; // ½«Ä©Î²ÁÚ½Úµã¸´ÖÆÖÁĞèÒªÉ¾³ıµÄÁÚ½Úµã´¦
+					cur_blk->buf[nei_offset - neiIdx] = cur_blk->buf[nei_offset - degree + 1]; 
 					pmemobj_persist(pop, &(cur_blk->buf[nei_offset - neiIdx]), sizeof(size_v));
-					cur_blk->buf[vidx + 1] -= 1;  // µ±Ç°blk degree¼õ1
-					pmemobj_persist(pop, &(cur_blk->buf[vidx + 1]), sizeof(size_v));  // recoveryÊÇÊ±ºòĞèÒª¶îÍâÅĞ¶¨ÊÇ·ñ´æÔÚÓë×îºóÒ»¸öÁÚ½ÚµãidÏàÍ¬µÄÁÚ½Úµã£¬Èç¹ûÓĞÔòËµÃ÷´Ë´¦flushÊ±crashÁË
+					cur_blk->buf[vidx + 1] -= 1;  
+					pmemobj_persist(pop, &(cur_blk->buf[vidx + 1]), sizeof(size_v));  
 					
 					break_flag = 1;
 					break;
@@ -1021,15 +965,15 @@ void delete_edge(PMEMobjpool* pop, size_v src, size_v des, vector<VIDX_PAIR> ver
 	}
 
 
-	// ´¦ÀíÆÕÍ¨¶¥µã£¬¼´µ¥¸öblk´æ´¢ÁË¶à¸ö¶¥µã
+	
 	for (size_v neiIdx = 0; neiIdx < degree; neiIdx++)
 	{
 		if (gblk->buf[nei_offset - neiIdx] == des)
 		{
-			gblk->buf[nei_offset - neiIdx] = gblk->buf[nei_offset - degree + 1]; // ½«Ä©Î²ÁÚ½Úµã¸´ÖÆÖÁĞèÒªÉ¾³ıµÄÁÚ½Úµã´¦
+			gblk->buf[nei_offset - neiIdx] = gblk->buf[nei_offset - degree + 1]; 
 			pmemobj_persist(pop, &(gblk->buf[nei_offset - neiIdx]), sizeof(size_v));
 			gblk->buf[vidx + 1] -= 1;
-			pmemobj_persist(pop, &(gblk->buf[vidx + 1]), sizeof(size_v));  // recoveryÊÇÊ±ºòĞèÒª¶îÍâÅĞ¶¨ÊÇ·ñ´æÔÚÓë×îºóÒ»¸öÁÚ½ÚµãidÏàÍ¬µÄÁÚ½Úµã£¬Èç¹ûÓĞÔòËµÃ÷´Ë´¦flushÊ±crashÁË
+			pmemobj_persist(pop, &(gblk->buf[vidx + 1]), sizeof(size_v));  
 			return;
 		}
 	}
