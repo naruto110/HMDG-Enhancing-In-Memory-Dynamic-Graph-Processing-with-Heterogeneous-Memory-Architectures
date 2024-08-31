@@ -34,19 +34,18 @@ void set_path(vector<string>& data_path, vector<string>& task_path)
 	data_path.push_back("/home/tongfeng/data/orkut-links/out.el");  // 6:orkut-links
 	data_path.push_back("/home/tongfeng/data/skitter-undirect/out.el");  // 7:skitter
 	data_path.push_back("/home/tongfeng/data/dblp-undirect/out.el");  // 8:dblp
-	data_path.push_back("/home/tongfeng/data/graph500-26.e");  // 9:graph500-26.e 空格分开
-	data_path.push_back("/home/tongfeng/data/dota-league.e");  // 10:dota-league.e 空格分开
+	data_path.push_back("/home/tongfeng/data/graph500-26.e");  // 9:graph500-26.e 
+	data_path.push_back("/home/tongfeng/data/dota-league.e");  // 10:dota-league.e 
 
-	data_path.push_back("/home/tongfeng/data/graph500-22.e");  // 11:graph500-22.e 空格分开
-	data_path.push_back("/home/tongfeng/data/graph500-22.task");  // 12:graph500-22.task 空格分开
+	data_path.push_back("/home/tongfeng/data/graph500-22.e");  // 11:graph500-22.e 
+	data_path.push_back("/home/tongfeng/data/graph500-22.task");  // 12:graph500-22.task 
 	data_path.push_back("/home/tongfeng/data/uniform-22.task");  // 13: uniform-22.task
 	data_path.push_back("/home/tongfeng/data/uniform-22.e");  // 14: 
 }
 
 void generate_tasks(vector<Task> &t_vec)
 {
-    // 生成400条删除边，再生成对应的400条插入边
-    // 每200条边后插入pagerank
+    
 	int32_t task_cnt = 0;
 	for (int32_t vidx = 0; vidx < global_vectex_vec.size(); vidx++) {
 		Vertex *v = global_vectex_vec[vidx];
@@ -61,19 +60,19 @@ void generate_tasks(vector<Task> &t_vec)
 						e.des = v->blk_list[blk_idx].blk_ptr[ele_idx];
 						task.e = e;
 						task.task_id = global_task_id;
-						task.type = 1;  // 删除边
+						task.type = 1;  // 
 						t_vec.push_back(task);
 						task_cnt++;
 						break;
                     } 
                 }
-				break;  // 一个顶点只选取一条边，选取多条也ok
+				break;  
             }
 		} else {
 			continue;
 		}
 
-		if (task_cnt % 100 == 0) { // 200个边更新任务增加一个pagerank任务
+		if (task_cnt % 100 == 0) { 
 			Task task;
 			task.type = 2; // pagerank
 			task.task_id = global_task_id;
@@ -120,7 +119,6 @@ void test_concurrency_benchmark(vector<Task> t_vec, int32_t pool_threads, memkin
 
 	for (int tIdx = 0; tIdx < t_vec.size(); tIdx++) {
 		Task task = t_vec[tIdx];
-		// 记录不同任务插入前存在的更新的边
 		// new_src_set.insert(e.src);
 		if (task.type != 2) {
 			if (global_task_map.find(task.task_id) != global_task_map.end()) {
@@ -133,7 +131,7 @@ void test_concurrency_benchmark(vector<Task> t_vec, int32_t pool_threads, memkin
 		}
 
 		// cout << "task idx: " << tIdx << " task.type: " << task.type << endl;
-		while (writerCnt > 0 && task.type == 2); // 任务必须等待在当前任务前发生的边更新任务执行完才能执行
+		while (writerCnt > 0 && task.type == 2); 
 		switch (task.type) {
 			case 0:
 				// insert edge
@@ -166,7 +164,7 @@ void test_concurrency_benchmark(vector<Task> t_vec, int32_t pool_threads, memkin
 	futures.push_back(pool.enqueue(clean_snap_cur));
 
 	cout << "All tasks are submitted." << endl;
-	// 等待所有任务完成
+	
     for(auto& future : futures) {
         future.wait();
     }
@@ -177,7 +175,7 @@ void test_concurrency_benchmark(vector<Task> t_vec, int32_t pool_threads, memkin
 
 void test_func(memkind_t kind)
 {
-	// pm_blk blk = generate_blk(kind);  // 分配在栈上了
+	// pm_blk blk = generate_blk(kind);  
 	pm_blk* blk = new pm_blk(generate_blk(kind));
 	global_vectex_vec[1]->blk_list[0].next_blk = blk;
 	blk->task_id = 3;
@@ -247,7 +245,7 @@ int main(int argc, char* argv[])
 	// print_edges();
 
 	vector<int64_t> offset_vec;
-	// offset_vec.push_back(0);  // 第一个顶点起始位置
+	// offset_vec.push_back(0);  
 	// int32_t cur_vid = global_edge_vec[0].src;
 
 	global_edge_array = (new_edge *)memkind_malloc(pmem_kind, sizeof(new_edge) * global_edge_num);
@@ -275,26 +273,25 @@ int main(int argc, char* argv[])
 
 	// cout << offset_vec[0] << " " << offset_vec[1] << " " << offset_vec[2] << " " << offset_vec[3] << endl;
 
-	// graph_maintenance_nvm_parallel_shuffle(pmem_kind);  // 无需
+	// graph_maintenance_nvm_parallel_shuffle(pmem_kind);  
 	graph_maintenance_nvm_parallel_shuffle_mix(pmem_kind);
-	// 统计block数量
+	
 	int64_t total_blk_cnt = 0;
 	for (int32_t i = 0; i < global_vectex_vec.size(); i++) {
 		total_blk_cnt += global_vectex_vec[i]->blk_list.size();
 	}
 	cout << "total number of blocks: " << total_blk_cnt << endl;
-	// graph_maintenance_nvm(pmem_kind);  // 验证串行处理效率
+	// graph_maintenance_nvm(pmem_kind);  
 	// graph_maintenance_delete(pmem_kind);
 	// test_benchmark();
 
-	// // // 验证多版本
+	
 	// vector<Task> t_vec;
 	// generate_tasks(t_vec);
 	// test_concurrency_benchmark(t_vec, (32 - THREAD_NUM), pmem_kind);
 	return 1;
 
-	/*********缓存至DRAM buffer中*********/
-	int32_t stride = global_edge_num;  // 对于friendster和dimacs10-uk 需要分批处理
+	int32_t stride = global_edge_num;
 	int32_t start_idx = 0;
 	int32_t end_idx = start_idx + stride;
 	// Bplus* bplus = new Bplus();
@@ -313,7 +310,7 @@ int main(int argc, char* argv[])
 		int64_t start_off = offset_vec[i];
 		int64_t end_off;
 		if (i == (offset_vec.size()-1)) {
-			end_off = global_edge_num;  // 最后一个顶点偏移量
+			end_off = global_edge_num;  
 		} else {
 			end_off = offset_vec[i+1];
 		}
@@ -325,7 +322,7 @@ int main(int argc, char* argv[])
 		// if (i % 1000000 == 0) {
 		// 	cout << "insert " << i << " edges." << endl;
 		// }
-		// graph_maintenance_nvm_parallel(src, thread_id, pmem_kind);  // 注意内存分配的线程安全问题
+		// graph_maintenance_nvm_parallel(src, thread_id, pmem_kind);  
 	}
 
 	end_t = get_current_time();
@@ -335,17 +332,16 @@ int main(int argc, char* argv[])
 
 
 	// while (end_idx <= global_edge_num){
-	// 	// 可以当做是读取文件的开销，不计入图结构维护时间
+	// 	
 	// 	set<int32_t> new_src_set;
 	// 	vector<int32_t> new_src_vec;
 	// 	for (size_t edgeIdx = start_idx; edgeIdx < end_idx; edgeIdx++) {
 	// 		new_edge e = global_edge_array[edgeIdx];
 	// 		// cout << "(" << e.src << ", " << e.des << ") " << global_vectex_vec[e.src]->id << endl;
-	// 		global_vectex_vec[e.src]->edge_stamp_vec[0].push_back(e.des); // 只有一个任务
+	// 		global_vectex_vec[e.src]->edge_stamp_vec[0].push_back(e.des); 
 	// 		new_src_set.insert(e.src);
 	// 	}
 
-	// 	// 将buffer移动至nvm中。针对大规模数据集，DRAM溢出。此部分不需要计入总时间
 	// 	// #pragma omp parallel for
 	// 	// for (int32_t vidx = 0; vidx < global_vectex_vec.size(); vidx++) {
 	// 	// 	int32_t new_edge_num = global_vectex_vec[vidx]->edge_stamp_vec[0].size();
@@ -363,7 +359,7 @@ int main(int argc, char* argv[])
 	// 	for (const int& element : new_src_set) { 
     //     	// Vertex *src = global_vectex_vec[element];
 	// 		new_src_vec.push_back(element);
-	// 		// graph_maintenance_nvm_parallel(src, pmem_kind);  // 注意内存分配的线程安全问题
+	// 		// graph_maintenance_nvm_parallel(src, pmem_kind);  
     // 	}
 
 	// 	// cout << "start_idx 0: " << start_idx << " new_src_vec size: " << new_src_vec.size() << endl;
@@ -375,11 +371,11 @@ int main(int argc, char* argv[])
 	// 		// int thread_id = omp_get_thread_num();
 	// 		// cout << "thread_id: " << thread_id << endl;
 	// 		Vertex *src = global_vectex_vec[new_src_vec[i]];
-	// 		graph_maintenance_nvm_parallel_baseline(src, pmem_kind);  // 说明多线程可能导致内存分配阻塞
+	// 		graph_maintenance_nvm_parallel_baseline(src, pmem_kind);  
 	// 		// graph_maintenance_nvm_parallel_forLarge(src, pmem_kind);
 			
 			
-	// 		// graph_maintenance_nvm_parallel(src, thread_id, pmem_kind);  // 注意内存分配的线程安全问题
+	// 		// graph_maintenance_nvm_parallel(src, thread_id, pmem_kind);  
 	// 	}
 
 	// 	end_t = get_current_time();
@@ -400,11 +396,11 @@ int main(int argc, char* argv[])
     // print_pma(global_vectex_vec[1]);
 	// cout << "Load graph on NVM parallel time: " << end_t - start_t << endl;
 	// global_blk_vec.clear();
-	// global_blk_vec.shrink_to_fit();  // 统计内存占用情况
+	// global_blk_vec.shrink_to_fit();  
 	cout << "Load graph on NVM parallel time: " << total_time << endl;
 	test_benchmark();
 
-	// 统计block数量
+	
 	// int64_t total_blk_cnt = 0;
 	for (int32_t i = 0; i < global_vectex_vec.size(); i++) {
 		total_blk_cnt += global_vectex_vec[i]->blk_list.size();
@@ -431,13 +427,11 @@ int main(int argc, char* argv[])
 	
 	return 1;
 
-	// /********以CSR形式存储********/
 	// graph_blk* csr_blk = (graph_blk*)memkind_malloc(pmem_kind, sizeof(graph_blk));;
 
 	// sorted_csr_pm(params, csr_blk);
 	// return 1;
 
-		// 验证blk对读取速度的影响  blk size越大越好
 	// int32_t total_blks = 1000000;
 	// generate_blk_batch(total_blks, pmem_kind);
 	// int32_t *tmp_buf = (int32_t *)memkind_malloc(pmem_kind, PM_BLK_SIZE * sizeof(int32_t) * total_blks);
