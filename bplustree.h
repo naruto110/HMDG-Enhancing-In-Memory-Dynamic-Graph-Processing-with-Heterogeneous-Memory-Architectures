@@ -13,13 +13,12 @@
 
 using namespace std;
 
-#define M 1//m*2=keyÊı£¬m*2+1=Öµ£»//²åÈëÂú¸ñ¹à£¬É¾³ıÒ»¸ö½Úµã²»ÄÜÉÙÓÚ(M+1)/2,ÈôzhiÎª5£¬²»ÄÜÉÙÓÚ2
+#define M 1
 typedef AVLtree* VAL_TYPE;  
 
 typedef hash_map<int, Tree*> LeafMap;
 typedef typename LeafMap::iterator LeafMapIter;
 
-// VAL_TYPE key_words[1001];//5½×Ê÷,×î¶à4¸ö¹Ø¼ü×Ö 
 
 class Inter_Node;
 
@@ -31,7 +30,7 @@ public:
     Node* GetBrother(int& flag);
     Inter_Node* Parent;
     int key[M * 2];//4
-    int count; // keyµÄÊıÁ¿ wtf
+    int count;
     int isLeaf;
     void Print();
 };
@@ -41,13 +40,13 @@ class Inter_Node : public Node
 {
 public:
     Inter_Node();
-    virtual ~Inter_Node();//Ğéº¯ÊıÉùÃ÷¶¨Òå
+    virtual ~Inter_Node();
     bool Insert(int value, Node* pNode);
     bool Delete(int value);
-    int Split(Inter_Node* pNode, int key);//·ÖÁÑ
+    int Split(Inter_Node* pNode, int key);
     bool Merge(Inter_Node* pNode);
     bool Slib(Inter_Node* pNode);
-    Node* Child[M * 2 + 1];//5¸ö²éÕÒÂ·¾¶
+    Node* Child[M * 2 + 1];
 };
 Inter_Node::~Inter_Node()
 {
@@ -55,7 +54,6 @@ Inter_Node::~Inter_Node()
         Child[i] = NULL;
 }
 
-//Ò¶×Ó½áµã
 class Leaf_Node : public Node
 {
 public:
@@ -68,13 +66,13 @@ public:
     Leaf_Node* Pre_Node;
     Leaf_Node* Next_Node;
 
-    VAL_TYPE nei_avl[M * 2]; // Óë¹Ø¼ü×Ö³¤¶ÈÒ»ÖÂ£¬´æ´¢¶ÔÓ¦keyµÄÁÚ½Ó±íµÄÆ½ºâ¶ş²æÊ÷
-    size_t nei_cnt[M * 2] = {0}; // ¼ÇÂ¼²»Í¬srcĞÂÔöµÄÁÚ½ÚµãÊı
+    VAL_TYPE nei_avl[M * 2]; 
+    size_t nei_cnt[M * 2] = {0}; 
     // vector<pair<size_t, size_t> > nei_unsorted[M * 2];
 };
 Leaf_Node::~Leaf_Node() {}
 
-//B+Ê÷
+//B+æ ‘
 class Bplus
 {
 public:
@@ -82,7 +80,7 @@ public:
     virtual ~Bplus();
     bool Search(int data, string& sPath, VAL_TYPE& nei_avl);
     bool Search_insert(int data, int neighbor, int tombstone);
-    bool Insert(int data, int neighbor, int tombstone);  // ¶ÔÓÚÒ»Ìõ±ß£¬data¼´Îªsrc vertex£¬neighborÎªdes vertex, tombstone ±íÊ¾É¾³ı/ĞÂÔö±ß
+    bool Insert(int data, int neighbor, int tombstone);  
     bool Delete(int data);
     void Print();
     void treeTraversal();
@@ -95,14 +93,13 @@ public:
 };
 Bplus::~Bplus() {}
 
-//½áµã´´½¨¶ÔÏó
 Node::Node()
 {
     isLeaf = true;
     count = 0;
     Parent = NULL;
 }
-//Ò¶×Ó½áµã´´½¨¶ÔÏó
+
 Leaf_Node::Leaf_Node()
 {
     isLeaf = true;
@@ -116,20 +113,19 @@ Leaf_Node::Leaf_Node()
     }
     // nei_cnt = {0};
 }
-//ÖĞ¼ä½áµã´´½¨¶ÔÏó
+
 Inter_Node::Inter_Node()
 {
     isLeaf = false;
     for (int i = 0; i < M * 2 + 1; i++)
         Child[i] = NULL;
 }
-//Bplus´´½¨¶ÔÏó
+
 Bplus::Bplus()
 {
     Root = NULL;
 }
 
-//½áµã²éÕÒĞÖµÜ½áµã
 Node* Node::GetBrother(int& flag)
 {
     if (NULL == Parent)
@@ -140,14 +136,14 @@ Node* Node::GetBrother(int& flag)
     {
         if (Parent->Child[i] == this)
         {
-            if (i == Parent->count) // µ±Ç°nodeÎª×îÓÒ±ßµÄnodeÁË£¬Ö»ÄÜ·µ»Ø×óĞÖµÜ wtf
+            if (i == Parent->count) 
             {
-                p = Parent->Child[i - 1];//×óĞÖµÜ flag=1
+                p = Parent->Child[i - 1];
                 flag = 1;
             }
             else
             {
-                p = Parent->Child[i + 1];//ÓÒĞÖµÜ flag=2
+                p = Parent->Child[i + 1];
                 flag = 2;
             }
         }
@@ -155,7 +151,6 @@ Node* Node::GetBrother(int& flag)
     return p;
 }
 
-//½áµãÊä³ö
 // void Node::Print()
 // {
 //     for (int i = 0; i < count; i++)
@@ -172,13 +167,12 @@ void Node::Print()
 
 }
 
-//Ò¶×Ó½áµãµÄ·ÖÁÑ
 int Leaf_Node::Split(Leaf_Node* p)
 {
     int j = 0;
-    for (int i = M; i < M * 2; i++, j++)//°ÑÖµcopyµ½ĞÂ½Úµã
+    for (int i = M; i < M * 2; i++, j++)
     {
-        p->key[j] = this->key[i];//thisÎªold node
+        p->key[j] = this->key[i];//thisä¸ºold node
         p->nei_avl[j] = this->nei_avl[i];
         this->nei_avl[i] = NULL;
         p->nei_cnt[j] = this->nei_cnt[i];
@@ -190,7 +184,6 @@ int Leaf_Node::Split(Leaf_Node* p)
     return p->key[0];
 }
 
-//Ò¶×Ó½áµãÉ¾³ı
 bool Leaf_Node::Delete(int value)
 {
     bool found = false;
@@ -213,50 +206,48 @@ bool Leaf_Node::Delete(int value)
     return true;
 }
 
-//Ò¶×Ó½áµãµÄ²åÈë
 bool Leaf_Node::Insert(int value, int neighbor, int tombstone)
 {
     int i = 0;
     VAL_TYPE tmp_avl = NULL;
-    for (; (value > key[i]) && (i < count); i++)//°´Ë³Ğò
+    for (; (value > key[i]) && (i < count); i++)
     {
     }
-    for (int j = count; j > i; j--)//ÒÆ¶¯£¬ÕÒµ½Ó¦¸Ã²åÈëµÄ¹Ø¼ü×ÖÎ»ÖÃ
+    for (int j = count; j > i; j--)
     {
         key[j] = key[j - 1];
-        nei_avl[j] = nei_avl[j - 1]; // Ã¿¸ökey¶ÔÓ¦µÄavl treeÒ²Òª½øĞĞ¸üĞÂ
+        nei_avl[j] = nei_avl[j - 1];  
         nei_cnt[j] = nei_cnt[j - 1];
     }
 
     // cout << "test 3: i is " << i << endl;
 
-    key[i] = value;//²åÈë¹Ø¼ü×Ö
+    key[i] = value;
     tmp_avl = avlInsert(tmp_avl, neighbor, tombstone);
 
     // cout << "before AVL insert src: " << value << " nei: " << neighbor << " cnt: " << nei_cnt[i] << endl;
     nei_avl[i] = tmp_avl;
-    nei_cnt[i] = 1;  // ÒòÎªÊÇĞÂ¼ÓÈëµÄvalue£¬´Ë´¦Ö±½ÓÖÃÎª1
+    nei_cnt[i] = 1;  
 
     // cout << "AVL insert src: " << value << " nei: " << neighbor << " cnt: " << nei_cnt[i] << endl;
 
     // pair<size_t, size_t> tmp_nei(neighbor, tombstone);
-    // nei_unsorted[i].push_back(tmp_nei); // ÎŞĞòĞÂÔö±ß
+    // nei_unsorted[i].push_back(tmp_nei); 
 
     count++;
     return true;
 }
 
-//Ò¶½áµã²éÕÒ
-Leaf_Node* Bplus::Find(int data)//dataÎª¹Ø¼ü×Ö£¬ÕÒµ½ÊÊºÏ¸Ã¶¥µã´æ´¢µÄÒ¶½Úµã
+Leaf_Node* Bplus::Find(int data)
 {
     int i = 0;
-    Node* p = Root; //?????bplusµÄ¸ù
-    Inter_Node* q;  //?§Ş???
+    Node* p = Root;
+    Inter_Node* q;  
     while (NULL != p)
     {
-        if (p->isLeaf) //Ö±ÖÁÕÒµ½ºÏÊÊµÄleaf node
+        if (p->isLeaf) 
             break;
-        for (i = 0; i < p->count; i++) //??????p??key?????p²»ÊÇÒ¶×Ó£¬Ñ­»·ÖÁcountµÄ½Úµã
+        for (i = 0; i < p->count; i++) 
         {
             if (data < p->key[i])
                 break;
@@ -265,20 +256,18 @@ Leaf_Node* Bplus::Find(int data)//dataÎª¹Ø¼ü×Ö£¬ÕÒµ½ÊÊºÏ¸Ã¶¥µã´æ´¢µÄÒ¶½Úµã
         p = q->Child[i];
     }
     
-    return (Leaf_Node*)p;//°Ñ¸ùreturn,Èç¹û¸úÎª¿Õ,µÚÒ»¸ö²åÈëº¯ÊıÉú³ÉµÄ½Úµã¼´Îª¸ù
+    return (Leaf_Node*)p;
 }
 
-//Ò¶×Ó½áµã,ºÏ²¢Ò¶×Ó½áµã
 bool Leaf_Node::Merge(Leaf_Node* p)
 {
-    if (this->count + p->count > M * 2)//Èç¹û¼ÓÔÚÒ»Æğ¸ñÂúËµÃ÷²»ĞèÒªºÏ²¢
+    if (this->count + p->count > M * 2)
         return false;
-    for (int i = 0; i < p->count; i++)//·ñÔò½«oldnodeµÄ¹Ø¼ü×Ö¶¼²åÈëµ½broÀï
+    for (int i = 0; i < p->count; i++)
         this->Insert(p->key[i], 0, 0);  
     return true;
 }
 
-//ÖĞ¼ä½áµãMergeºÏ²¢
 bool Inter_Node::Merge(Inter_Node* p)
 {
     key[count] = p->Child[0]->key[0];
@@ -293,49 +282,47 @@ bool Inter_Node::Merge(Inter_Node* p)
     return true;
 }
 
-//ÖĞ¼ä½áµã²åÈë
 bool Inter_Node::Insert(int value, Node* New)
 {
     int i = 0;
-    for (; (i < count) && (value > key[i]); i++)//iÖ¸ÏòkeyÒª²åÈëµÄÎ»ÖÃ
+    for (; (i < count) && (value > key[i]); i++)
     {
     }
-    for (int j = count; j > i; j--)//Å²¶¯µ¹µØ·½
+    for (int j = count; j > i; j--)
         key[j] = key[j - 1];
-    for (int j = count + 1; j > i + 1; j--)//¸¸Ç×keyÖµ¸Ä±ä£¬º¢×ÓÒÆ¶¯£»
+    for (int j = count + 1; j > i + 1; j--)
         Child[j] = Child[j - 1];
-    key[i] = value;//¹Ø¼ü×Ö´«µ½¸¸Ç×½Úµã
-    Child[i + 1] = New;//newnode·Åµ½¸Ã·ÅµÄÎ»ÖÃ
+    key[i] = value;
+    Child[i + 1] = New;
     New->Parent = this;
     count++;
     return true;
 }
 
-//ÖĞ¼ä½áµã·ÖÁÑ
 int Inter_Node::Split(Inter_Node* p, int k)
 {
     int i = 0, j = 0;
-    if ((k > this->key[M - 1]) && (k < this->key[M]))//·ÖÁÑµÄµØ·½ÔÚÖĞ¼ä
+    if ((k > this->key[M - 1]) && (k < this->key[M]))
     {
         for (i = M; i < M * 2; i++, j++)
-            p->key[j] = this->key[i];//¿½±´ºóÃæÖµ½øbrother
+            p->key[j] = this->key[i];
         j = 1;
         for (i = M + 1; i <= M * 2; i++, j++)
         {
-            this->Child[i]->Parent = p;//º¢×Ó¸ú×ÅÍùºóÒÆ¶¯
+            this->Child[i]->Parent = p;
             p->Child[j] = this->Child[i];
         }
-        this->count = M;//¹Ø¼ü×ÓÊıÁ¿¸÷Î»Ò»°ë
+        this->count = M;
         p->count = M;
         return k;
     }
-    int pos = k < this->key[M - 1] ? (M - 1) : M;//¿´k´óĞ¡ºÍÖĞ¼ä-1±È½Ï£¬¶¨Î»ÔÚÇ°Ãæ»¹ÊÇÔÚºóÃæ½Úµã
-    k = this->key[pos];//posÎª·ÖÁÑµã,¶¨Î»ÎªÇ°»¹ÊÇºó·ÖÁÑµã,×îºó¿Ï¶¨ÎªÖĞ¼äÖµ
+    int pos = k < this->key[M - 1] ? (M - 1) : M;
+    k = this->key[pos];
     j = 0;
-    for (i = pos + 1; i < M * 2; i++, j++)//Ç°½Úµã¿¼ºó½Úµã,´Ó²åÈëµÄÎ»ÖÃ·Ö£¬²åÈëÒÔºóµÄ·Åµ½ĞÂ½Úµã
+    for (i = pos + 1; i < M * 2; i++, j++)
         p->key[j] = this->key[i];
     j = 0;
-    for (i = pos + 1; i <= M * 2; i++, j++)//½«º¢×ÓËÍ¸øĞÖµÜ
+    for (i = pos + 1; i <= M * 2; i++, j++)
     {
         this->Child[i]->Parent = p;
         p->Child[j] = this->Child[i];
@@ -345,7 +332,6 @@ int Inter_Node::Split(Inter_Node* p, int k)
     return k;
 }
 
-//ÖĞ¼ä½áµãÉ¾³ı
 bool Inter_Node::Delete(int k)
 {
     int i = 0;
@@ -364,7 +350,6 @@ bool Inter_Node::Delete(int k)
     return true;
 }
 
-//ÖĞ¼ä½áµã
 bool Inter_Node::Slib(Inter_Node* p)
 {
     int i, j;
@@ -391,18 +376,17 @@ bool Inter_Node::Slib(Inter_Node* p)
     return true;
 }
 
-//B+Ê÷Ìí¼Ó½áµã
-bool Bplus::Add_Node(Inter_Node* p, int k, Node* New_Node)  // pÎªparent node, kÊÇĞÂÔönew nodeµÄÆğÊ¼key
+bool Bplus::Add_Node(Inter_Node* p, int k, Node* New_Node)  
 {
     if (NULL == p || p->isLeaf)
         return false;
-    if (p->count < M * 2)//¸¸Ç×²»Âú
+    if (p->count < M * 2)
         return p->Insert(k, New_Node);
     Inter_Node* Brother = new Inter_Node;
-    //Ò¶×Ó½ÚµãÂú£¬¸¸½ÚµãÒ²Âú·ÖÁÑÇé¿ö
-    int NewKey = p->Split(Brother, k);//NewKeyÎªĞèÒªÌáÈ¡²¢²åÈëµ½root½ÚµãµÄÖµ
 
-    //È·¶¨ĞèÒª²åÈëµÄ¹Ø¼ü×Ö£¬ÊÇ²åÈëµ½·ÖÁÑ½ÚµãµÄÄÄ¸öÎ»ÖÃ
+    int NewKey = p->Split(Brother, k);
+
+   
     if (p->count < Brother->count)
     {
         p->Insert(k, New_Node);
@@ -421,7 +405,7 @@ bool Bplus::Add_Node(Inter_Node* p, int k, Node* New_Node)  // pÎªparent node, k
     {
         parent = new Inter_Node();
         parent->Child[0] = p;
-        parent->key[0] = NewKey;//newkeyÎª·ÖÁÑ´«»Ø£¬Îª²åÈëµÄÖĞ¼äÖµ
+        parent->key[0] = NewKey;
         parent->Child[1] = Brother;
         p->Parent = parent;
         Brother->Parent = parent;
@@ -432,7 +416,6 @@ bool Bplus::Add_Node(Inter_Node* p, int k, Node* New_Node)  // pÎªparent node, k
     return Add_Node(parent, NewKey, Brother);
 }
 
-//B+Ê÷²éÕÒdata
 bool Bplus::Search(int data, string& sPath, VAL_TYPE& tmp_avl)
 {
     int i = 0;
@@ -466,7 +449,7 @@ bool Bplus::Search(int data, string& sPath, VAL_TYPE& tmp_avl)
         {   
             found = true;
             tmp_avl = l->nei_avl[i];
-            // ĞèÒªÔÚ´Ë´¦¸üĞÂÁÚ½Óavl tree
+           
             break;
         }
     }
@@ -474,7 +457,6 @@ bool Bplus::Search(int data, string& sPath, VAL_TYPE& tmp_avl)
     return found;
 }
 
-//B+Ê÷²éÕÒdata ²éÕÒµ½keyºó£¬Ö±½Ó¸üĞÂÆä¶ÔÓ¦µÄavl tree
 bool Bplus::Search_insert(int data, int neighbor, int tombstone)
 {
     int i = 0;
@@ -504,7 +486,6 @@ bool Bplus::Search_insert(int data, int neighbor, int tombstone)
         {   
             found = true;
             
-            // ĞèÒªÔÚ´Ë´¦¸üĞÂÁÚ½Óavl tree
             l->nei_avl[i] = avlInsert(l->nei_avl[i], neighbor, tombstone);
             l->nei_cnt[i] += 1;
             // pair<size_t, size_t> tmp_nei(neighbor, tombstone);
@@ -516,46 +497,44 @@ bool Bplus::Search_insert(int data, int neighbor, int tombstone)
     return found;
 }
 
-//B+Ê÷µÄ²åÈë
-bool Bplus::Insert(int data, int neighbor, int tombstone) //dataÎª²åÈëµÄ¹Ø¼ü×Ö
+bool Bplus::Insert(int data, int neighbor, int tombstone) 
 {
     
     string a;
     VAL_TYPE tmp_avl = NULL;
-    if (true == Search_insert(data, neighbor, tombstone))//²éÕÒÒª²åÈëµÄÖµ  ÒÑ¾­´æÔÚ¸Ãdata(src)£¬Ôò½«¶ÔÓ¦µÄnei²åÈëÆä¶ÔÓ¦µÄavlÖĞ
+    if (true == Search_insert(data, neighbor, tombstone))
     {
         return true;      
     }
     
-    Leaf_Node* Old_Node = Find(data);//ÕÒµ½ĞèÒª²åÈëµÄÒ¶×Ó½Úµã¶¨ÒåÎªoldnode
+    Leaf_Node* Old_Node = Find(data);
    
     if (NULL == Old_Node) 
     {
-        Old_Node = new Leaf_Node;//Ê÷Îª¿Õ
+        Old_Node = new Leaf_Node;
         Root = Old_Node;
     }
     
-    // ÒÔÏÂ²åÈëÊı¾İ³¡¾°ÎªÔ­ÏÈÎ´ÓĞµÄkey£¬¼´src vertexµÚÒ»´Î³öÏÖ£¬ĞèÒª¹¹½¨avl tree
 
-    if (Old_Node->count < M * 2) //ÓĞ¿Õ¼ä²åÈë£¬Ö±½Ó²å½øÈ¥²¢·µ»Ø
+    if (Old_Node->count < M * 2) 
     {
         // cout << "test 2: insert the first key: " << data << endl;
-        return Old_Node->Insert(data, neighbor, tombstone);  // ´Ë´¦ĞèÒª²åÈëÒ»¸öÖ¸Ïò¸ÃdataµÄ¶ş²æÊ÷Ö¸Õë wtf
+        return Old_Node->Insert(data, neighbor, tombstone);  
     }
 
-    Leaf_Node* New_Node = new Leaf_Node;//¼´½«·ÖÁÑ
+    Leaf_Node* New_Node = new Leaf_Node;
     
-    int k = Old_Node->Split(New_Node);//kÎªĞÂ½ÚµãµÚÒ»¸ö¹Ø¼ü×Ö
+    int k = Old_Node->Split(New_Node);
 
-    Leaf_Node* OldNext = Old_Node->Next_Node;  // Î¬»¤Ò¶×Ó½ÚµãµÄË«ÏòÁ´±í¹ØÏµ wtf
-    Old_Node->Next_Node = New_Node;//ÏàÁÚÒ¶×Ó½ÚµãÏàÁ¬
+    Leaf_Node* OldNext = Old_Node->Next_Node;  
+    Old_Node->Next_Node = New_Node;
     New_Node->Next_Node = OldNext;
     New_Node->Pre_Node = Old_Node;
 
     if (NULL != OldNext)
         OldNext->Pre_Node = New_Node;
 
-    if (data < k)//Ğ¡ÓÚnewnode key[0]£¬²åÇ°Ãæ£¬·ñÔò²åºóÃæ
+    if (data < k)
     {
         Old_Node->Insert(data, neighbor, tombstone);
     }
@@ -565,7 +544,7 @@ bool Bplus::Insert(int data, int neighbor, int tombstone) //dataÎª²åÈëµÄ¹Ø¼ü×Ö
     }
     Inter_Node* parent = (Inter_Node*)(Old_Node->Parent);
 
-    if (NULL == parent)//³õÊ¼»¯parent£¬ÈôÃ»ÓĞ¸¸½áµã£¬ĞÂ½¨Ò»¸ö
+    if (NULL == parent)
     {
         Inter_Node* New_Root = new Inter_Node;
         New_Root->Child[0] = Old_Node;
@@ -578,21 +557,20 @@ bool Bplus::Insert(int data, int neighbor, int tombstone) //dataÎª²åÈëµÄ¹Ø¼ü×Ö
         return true;
     }
 
-    return Add_Node(parent, k, New_Node);//Ïò¸¸Ç×Àï²åÖµ»òÕß·ÖÁÑ¸¸Ç×½¨Á¢ĞÂµÄ½Úµã, ´Ë´¦Ö»Õë¶Ôinter node½øĞĞ²Ù×÷£¬leaf node²»ÔÙ¸Ä±ä
+    return Add_Node(parent, k, New_Node);
 }
 
-//B+Ê÷µÄÉ¾³ı
 bool Bplus::Delete(int data)
 {
-    Leaf_Node* Old_Node = Find(data); //²éÕÒÊı¾İ
-    if (NULL == Old_Node)//Ê÷Îª¿Õ
+    Leaf_Node* Old_Node = Find(data); 
+    if (NULL == Old_Node)
         return false;
-    if (false == Old_Node->Delete(data)) //É¾³ı
+    if (false == Old_Node->Delete(data)) 
         return false;
     Inter_Node* parent = (Inter_Node*)(Old_Node->Parent);
     if (NULL == parent)
     {
-        if (0 == Old_Node->count)//½«Õû¿ÃÊ÷É¾µô£¬Ã»¸¸Ç×Ã»key
+        if (0 == Old_Node->count)
         {
             delete Old_Node;
             Root = NULL;
@@ -603,31 +581,31 @@ bool Bplus::Delete(int data)
     {
         for (int i = 0; (i < parent->count) && (data >= parent->key[i]); i++)
         {
-            if (parent->key[i] == data)//Èç¹ûÒªÉ¾³ıµÄkey±È¸¸Ç×Ë÷ÒıËûµÄÖµÒª´ó¾ÍÖ±½ÓÉ¾³ı£¬Èç¹ûÏàµÈ£¬¾Í¸ø¸¸Ç×Ò»¸öĞÂË÷Òı
+            if (parent->key[i] == data)
                 parent->key[i] = Old_Node->key[0];
         }
         return true;
     }
-    //²»Âú×ã¹æ¸ñ£¬ÒªºÏ²¢»ò½èÖµ
+    
     int flag = 1;
     Leaf_Node* Brother = (Leaf_Node*)(Old_Node->GetBrother(flag));
     int NewData = 0;
-    if (Brother->count > M)//½èÖµ
+    if (Brother->count > M)
     {
-        if (1 == flag)//×óĞÖµÜ
+        if (1 == flag)
         {
-            NewData = Brother->key[Brother->count - 1];//Òª±»½è×ßµÄÊı¾İ
+            NewData = Brother->key[Brother->count - 1];
         }
-        else//ÓÒĞÖµÜ
+        else
         {
             NewData = Brother->key[0];
         }
         Old_Node->Insert(NewData, 0, 0);
         Brother->Delete(NewData);
-        //Ìæ»»parentÖĞµÄkeyÖµ
+        
         if (1 == flag)
         {
-            for (int i = 0; i <= parent->count; i++)//Ïò×óĞÖµÜ½èÖµ
+            for (int i = 0; i <= parent->count; i++)
             {
                 if (parent->Child[i] == Old_Node && i > 0)
                     parent->key[i - 1] = Old_Node->key[0];
@@ -635,7 +613,7 @@ bool Bplus::Delete(int data)
         }
         else
         {
-            for (int i = 0; i <= parent->count; i++)//ÏòÓÒĞÖµÜ½èÖµ
+            for (int i = 0; i <= parent->count; i++)
             {
                 if (parent->Child[i] == Old_Node && i > 0)
                     parent->key[i - 1] = Old_Node->key[0];
@@ -646,11 +624,11 @@ bool Bplus::Delete(int data)
         return true;
     }
     int NewKey = 0;
-    if (1 == flag)//ÎŞ·¨½èÖµ£¬ºÏ²¢
+    if (1 == flag)
     {
         Brother->Merge(Old_Node);
-        NewKey = Old_Node->key[0];//±ê¼ÇÒªÉ¾³ıµÄ¸¸Ç×ÀïµÄkey
-        Leaf_Node* OldNext = Old_Node->Next_Node;//½ÓÈëºóÃæĞÖµÜ
+        NewKey = Old_Node->key[0];
+        Leaf_Node* OldNext = Old_Node->Next_Node;
         Brother->Next_Node = OldNext;
         if (NULL != OldNext)
             OldNext->Pre_Node = Brother;
@@ -666,10 +644,9 @@ bool Bplus::Delete(int data)
             OldNext->Pre_Node = Old_Node;
         delete Brother;
     }
-    return Remove_Node(parent, NewKey);//ÒÆ³ıparent»òÕßÒÆ³ıparentÖĞ¹Ø¼ü×Ö£»
+    return Remove_Node(parent, NewKey);
 }
 
-//Bplus ÒÆ³ı½áµã
 bool Bplus::Remove_Node(Inter_Node* p, int k)
 {
     if (false == p->Delete(k))
@@ -686,20 +663,20 @@ bool Bplus::Remove_Node(Inter_Node* p, int k)
         }
         return true;
     }
-    if (p->count >= M)//¸¸Ç×²»ºÏ²¢
+    if (p->count >= M)
     {
-        //É¾µôparentÖĞµÄ¹Ø¼ü×Ö
+        
         for (int i = 0; (i < parent->count) && (k >= parent->key[i]); i++)
         {
-            if (parent->key[i] == k)//¿´¸¸Ç×µÄparentÀïÓĞÃ»ÓĞÒªÉ¾³ıµÄ¹Ø¼ü×Ö£¬ÓĞ¾Í¸üĞÂË÷Òı
+            if (parent->key[i] == k)
                 parent->key[i] = p->key[0];
         }
         return true;
     }
-    //¸¸Ç×ºÏ²¢
+    
     int flag = 1;
     Inter_Node* Brother = (Inter_Node*)(p->GetBrother(flag));
-    if (Brother->count > M)//¸¸Ç×½èÖµ
+    if (Brother->count > M)
     {
         p->Slib(Brother);
         if (1 == flag)
@@ -722,7 +699,7 @@ bool Bplus::Remove_Node(Inter_Node* p, int k)
         }
         return true;
     }
-    //ĞÖµÜ½èÖµ
+    
     int NewKey = 0;
     if (1 == flag)
     {
@@ -739,7 +716,6 @@ bool Bplus::Remove_Node(Inter_Node* p, int k)
     return Remove_Node(parent, NewKey);
 }
 
-//BplusÊä³ö
 void Bplus::Print()
 {
     Node* p = Root;
@@ -783,12 +759,12 @@ void Bplus::treeTraversal()
     
     Inter_Node* q;
     Leaf_Node* l;
-    while (NULL != p) // ²éÕÒµÚÒ»¸öleaf node
+    while (NULL != p) 
     {
         if (p->isLeaf)
             break;
         q = (Inter_Node*)p;
-        p = q->Child[0]; // ×î×ó±ßµÄº¢×Ó½Úµã ¶ÔÓ¦µÄkeyÖµ×îĞ¡
+        p = q->Child[0];  
     }
     l = (Leaf_Node*) p; 
     while (l != NULL)
@@ -807,8 +783,7 @@ void Bplus::treeTraversal()
     
 }
 
-//²âÊÔ£ºtest1 ½¨Á¢B+tree
-void test_generate(Bplus* bplus)//countÎªÏëÒª¼¸¸ö½Úµã£¬·µ»ØÖµ½¨Ò»¸öÊ÷
+void test_generate(Bplus* bplus)
 {
     int a[] = {1, 1, 1, 1, 1, 1, 2, 3};
     int b[] = {2, 3, 6, 7, 8, 9, 4, 5};
@@ -825,7 +800,6 @@ void test_generate(Bplus* bplus)//countÎªÏëÒª¼¸¸ö½Úµã£¬·µ»ØÖµ½¨Ò»¸öÊ÷
     cout << endl;
 }
 
-//²âÊÔ: ²éÑ¯¶¥µãµÄÁÚ½Úµã
 void query_neighbor(Bplus* bplus, int src)
 {
     string sPath;
@@ -836,7 +810,6 @@ void query_neighbor(Bplus* bplus, int src)
     cout << endl;
 }
 
-//²âÊÔ£ºtest3²åÈë
 void insert_edge(Bplus* bplus, int src, int des, int tombstone)
 {
     bool success = bplus->Insert(src, des, tombstone);
@@ -851,7 +824,6 @@ void insert_edge(Bplus* bplus, int src, int des, int tombstone)
     // cout << endl;
 }
 
-//²âÊÔ£ºtest4É¾³ı
 void test4_genavl(void)
 {
     VAL_TYPE tmp_avl = NULL;
@@ -869,90 +841,9 @@ void test4_genavl(void)
     cout << endl;
 }
 
-//²âÊÔ£ºtest5´òÓ¡
 void test5(Bplus* bplus)
 {
     bplus->Print();
     cout << endl;
 }
 
-//²âÊÔ£ºtest6ĞŞ¸Ä
-// void test6(Bplus* bplus, int i, VAL_TYPE j, int k, VAL_TYPE l)
-// {
-//     if (i == k)
-//     {
-//         key_words[i] = l;
-//     }
-//     else
-//     {
-//         //i £¡= j
-//         //É¾³ı(i , j );
-//         bplus->Delete(i);
-//         //²åÈë(k , l )
-//         bplus->Insert(k);
-//         //³õÊ¼»¯½áµãÄÚÈİ
-//         key_words[k] = l;
-//     }
-//     cout << endl;
-// }
-
-//Ö÷º¯Êı
-// int main()
-// {
-//     Bplus* bplus = new Bplus();
-//     int x = 1;
-//     int y = 0;
-//     VAL_TYPE s;
-//     int i, k;
-//     VAL_TYPE j;
-//     VAL_TYPE l;
-//     while (0 != x)
-//     {
-//         cout << "1.the number of nodes in B+tree"<<endl;
-//         cout << "2.query " << endl;
-//         cout << "3.insert " << endl;
-//         cout << "4.delete" << endl;
-//         cout << "5.display the B+tree" << endl;
-//         cout << "6.modify" << endl;
-//         cout << " \n";
-//         cin >> x;
-//         switch (x)
-//         {
-//         case 1:
-//             cout << "the number of nodes in B+tree:";
-//             cin >> y;
-//             test1(bplus, y);
-//             break;
-//         case 2:
-//             cout << "query key A:";
-//             cin >> y;
-//             test2(bplus, y);
-//             break;
-//         case 3:
-//             cout << "insert key A and B:";
-//             cin >> y >> s;
-//             test3(bplus, y, s);
-//             break;
-//         case 4:
-//             cout << "delete key A:";
-//             cin >> y;
-//             test4(bplus, y);
-//             break;
-//         case 5:
-//             test5(bplus);
-//             break;
-//         case 6:
-//             cout << "delete A and B:";
-//             cin >> i >> j;
-//             cout << "insert A and B:";
-//             cin >> k >> l;
-//             test6(bplus, i, j, k, l);
-//             break;
-//         default:
-//             delete bplus;
-//             return 0;
-//             break;
-//         }
-//     }
-//     return 0;
-// }
