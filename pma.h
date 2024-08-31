@@ -34,7 +34,7 @@ static const uint8_t max_sparseness =  2; // 1 / p_0;
 #define IS_VERTEX_ID 4
 
 #define BLK_SCALE 4
-#define PM_BLK_SIZE (64 * BLK_SCALE)  // 32个元素  4字节一个元素
+#define PM_BLK_SIZE (64 * BLK_SCALE)  
 
 pm_blk generate_blk(memkind_t kind);
 void generate_blk_batch(int32_t blk_num, memkind_t kind);
@@ -188,7 +188,7 @@ PMA* pma_creat (memkind_t kind)
     pma->seg_len = 2;
     pma->seg_num = pma->arr_cap / pma->seg_len;
     pma->tree_h = floor_lg (pma->seg_num) + 1;
-    pma->delta_t = (t_0 - t_h) / pma->tree_h;  // 稠密度按线性变化
+    pma->delta_t = (t_0 - t_h) / pma->tree_h;  
     pma->delta_p = (p_h - p_0) / pma->tree_h;
     // cout << "tree_h: " << pma->tree_h << " seg_num: " << pma->seg_num << endl;
     // pma->array = (element_type *)memkind_malloc(kind, sizeof(element_type) * pma->arr_cap);  // on NVM
@@ -196,10 +196,8 @@ PMA* pma_creat (memkind_t kind)
     return (pma);
 }
 
-// 查找blk中等于或者小于des最大的neighbor的index
 int32_t blk_search(pm_blk blk, int32_t des)
-{
-    //  TBD：预取 
+{ 
     int32_t index = -1;
     int32_t from = 0;
     int32_t to = PM_BLK_SIZE - 1;
@@ -255,17 +253,15 @@ int32_t get_blk_max(pm_blk blk)
     return -1;
 }
 
-// 从src的邻接表中查找des需要插入的位置
-// return blk的index
-// 全局index应为：返回值*256+index
+
 int32_t pma_find(PMA* pma, Vertex *src, int32_t des, int32_t from_blk, int32_t to_blk, int32_t &index) 
 {
-    // 查找更新边
-    if (src->blk_list.size() == 1)  // 只有一个blk 直接查找合适index
+    
+    if (src->blk_list.size() == 1)  
     {
         // cout << "test---" << endl;
         index = blk_search(src->blk_list[0], des);
-        return 0; // 第一个blk的index为0
+        return 0; 
     }
 
     int32_t init_to_blk = to_blk;
@@ -279,28 +275,28 @@ int32_t pma_find(PMA* pma, Vertex *src, int32_t des, int32_t from_blk, int32_t t
         int32_t cur_blk_min = get_blk_min(blk);
         // cout << "cur_blk_max: " << cur_blk_max << " cur_blk_min: " << cur_blk_min << endl;
 
-        if (des > cur_blk_min && des < cur_blk_max) // 比des小的最大neighbor必存在于此blk中
+        if (des > cur_blk_min && des < cur_blk_max) 
         {
             // cout << "test---" << endl;
             index = blk_search(blk, des);
-            return mid_blk;  // 返回blk index
+            return mid_blk;  
         } else if (des < cur_blk_min) {
-            if (mid_blk == 0) {  // 需要插入到第一个blk的最前端
+            if (mid_blk == 0) {  
                 index = -1;
                 return 0;
             }
             to_blk = mid_blk - 1;
-        } else { // 大于blk.max_nei
-            if (mid_blk != init_to_blk) { // 检测是否夹在中间
+        } else { // 澶т簬blk.max_nei
+            if (mid_blk != init_to_blk) { 
                 // int32_t next_min_nei = src.blk_list[mid_blk+1].min_nei;
                 int32_t next_min_nei = get_blk_min(src->blk_list[mid_blk+1]);
-                if (des < next_min_nei) { // 夹在两个blk中间
-                     index = blk_search(blk, des); // 当前blk最右侧顶点为目前找到的最大的比des最小的顶点
+                if (des < next_min_nei) { 
+                     index = blk_search(blk, des); 
                      return mid_blk;
                 }
             }
             if (from_blk == to_blk) {
-                index = blk_search(blk, des); // 当前blk最右侧顶点为目前找到的最大的比des最小的顶点
+                index = blk_search(blk, des); 
                 return mid_blk;
             }
             from_blk = mid_blk + 1;
@@ -340,7 +336,7 @@ int32_t binary_pma_find(PMA* pma, Vertex *src, int32_t des, int32_t from, int32_
             else if (src->blk_list[blk_idx].blk_ptr[bit_idx] < des) {
                 from = mid + 1;
             } else {  /* pma->array [i].key > key */
-                to = i - 1;  // 确保最终找到的是小于des的最大元素位置
+                to = i - 1;  
             }
         }
     }
@@ -349,7 +345,7 @@ int32_t binary_pma_find(PMA* pma, Vertex *src, int32_t des, int32_t from, int32_
     blk_idx = index / PM_BLK_SIZE;
     bit_idx = index % PM_BLK_SIZE;
     while (index >= 0 && (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)) {
-        index--;  // 确保找到的index必然存了值 也有可能是guard标签位
+        index--;   
         blk_idx = index / PM_BLK_SIZE;
         bit_idx = index % PM_BLK_SIZE;
         // bit_idx--;
@@ -387,7 +383,7 @@ int32_t binary_pma_find_mix(PMA* pma, Vertex *src, int32_t des, int32_t from, in
         } else {
             if (src->blk_list[blk_idx].blk_ptr[bit_idx] == des) {
                 index = i;
-                // 必然是删除边
+                
                 src->blk_list[blk_idx].blk_ptr[bit_idx] = -1;
                 src->degree --;
                 pma->ele_num--;
@@ -397,7 +393,7 @@ int32_t binary_pma_find_mix(PMA* pma, Vertex *src, int32_t des, int32_t from, in
             else if (src->blk_list[blk_idx].blk_ptr[bit_idx] < des) {
                 from = mid + 1;
             } else {  /* pma->array [i].key > key */
-                to = i - 1;  // 确保最终找到的是小于des的最大元素位置
+                to = i - 1;  
             }
         }
     }
@@ -406,7 +402,7 @@ int32_t binary_pma_find_mix(PMA* pma, Vertex *src, int32_t des, int32_t from, in
     blk_idx = index / PM_BLK_SIZE;
     bit_idx = index % PM_BLK_SIZE;
     while (index >= 0 && (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)) {
-        index--;  // 确保找到的index必然存了值 也有可能是guard标签位
+        index--;  
         blk_idx = index / PM_BLK_SIZE;
         bit_idx = index % PM_BLK_SIZE;
         // bit_idx--;
@@ -421,16 +417,16 @@ int32_t binary_pma_find_mix(PMA* pma, Vertex *src, int32_t des, int32_t from, in
 int32_t pma_insert(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t kind)
 {
     /*
-        insert after index // index 需要进行换算
+        insert after index 
     */
     int32_t j = index + 1;
     int32_t blk_idx, bit_idx;
 
     // cout << "j: " << j << " pma->arr_cap: " <<  pma->arr_cap << endl;
-    // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+    // blk_idx = j / PM_BLK_SIZE;  
     // bit_idx = j % PM_BLK_SIZE;
-    while (j < pma->arr_cap) { // 向右查找空slot
-        blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+    while (j < pma->arr_cap) { 
+        blk_idx = j / PM_BLK_SIZE;  
         bit_idx = j % PM_BLK_SIZE;
         // pm_blk blk = src.blk_list[blk_idx];
         if (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)
@@ -447,16 +443,16 @@ int32_t pma_insert(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t 
     
     if (j < pma->arr_cap) {
         // cout << "test --0 des: " << des << endl;
-        // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // blk_idx = j / PM_BLK_SIZE;  
         // bit_idx = j % PM_BLK_SIZE;
-        // int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  
         // int32_t pre_bit_idx = (j-1) % PM_BLK_SIZE;
 
         while (j > index + 1) /* Push elements to make space for the new element. */
         {
-            blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = j / PM_BLK_SIZE;  
             bit_idx = j % PM_BLK_SIZE;
-            int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  
             int32_t pre_bit_idx = (j-1) % PM_BLK_SIZE;
 
             src->blk_list[blk_idx].blk_ptr[bit_idx] = src->blk_list[pre_blk_idx].blk_ptr[pre_bit_idx];
@@ -475,18 +471,18 @@ int32_t pma_insert(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t 
             // }
         }
 
-        blk_idx = (index + 1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        blk_idx = (index + 1) / PM_BLK_SIZE;  
         bit_idx = (index + 1) % PM_BLK_SIZE;
         src->blk_list[blk_idx].blk_ptr[bit_idx] = des;
         // cout << "test--- bit_idx: " << bit_idx << endl;
-        index = index + 1;  // 此处index表示元素插入的实际位置，后续rebalance的时候用
+        index = index + 1;  
     } else { /* No empty space to the right of i. Try left. */
         // cout << "test --1 des: " << des << " index: " << index << endl;
         j = index - 1;
-        // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // blk_idx = j / PM_BLK_SIZE;  
         // bit_idx = j % PM_BLK_SIZE;
         while (j > 0) {
-            blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = j / PM_BLK_SIZE;  
             bit_idx = j % PM_BLK_SIZE;
             pm_blk blk = src->blk_list[blk_idx];
             if (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)
@@ -501,16 +497,16 @@ int32_t pma_insert(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t 
             // }
         }
         if (j >= 0) {
-            // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // blk_idx = j / PM_BLK_SIZE;  
             // bit_idx = j % PM_BLK_SIZE;
-            // int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  
             // int32_t be_bit_idx = (j+1) % PM_BLK_SIZE;
             // pm_blk blk = src.blk_list[blk_idx];
             // setBit(&src.blk_list[blk_idx].myBitmap, bit_idx);
             while (j < index) {
-                blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+                blk_idx = j / PM_BLK_SIZE;  
                 bit_idx = j % PM_BLK_SIZE;
-                int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+                int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  
                 int32_t be_bit_idx = (j+1) % PM_BLK_SIZE;
                 src->blk_list[blk_idx].blk_ptr[bit_idx] = src->blk_list[be_blk_idx].blk_ptr[be_bit_idx];
                 j++;
@@ -526,7 +522,7 @@ int32_t pma_insert(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t 
                 //     be_blk_idx++;
                 // }
             }
-            blk_idx = (index) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = (index) / PM_BLK_SIZE;  
             bit_idx = (index) % PM_BLK_SIZE;
             src->blk_list[blk_idx].blk_ptr[bit_idx] = des;
         }
@@ -545,7 +541,7 @@ int32_t pma_insert(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t 
 int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind_t kind)
 {
     /*
-        insert after index // index 需要进行换算
+        insert after index 
         insert the new des in current blk
     */
 
@@ -553,9 +549,9 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
     int32_t blk_idx, bit_idx;
 
     // cout << "j: " << j << " pma->arr_cap: " <<  pma->arr_cap << endl;
-    // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+    // blk_idx = j / PM_BLK_SIZE;  
     // bit_idx = j % PM_BLK_SIZE;
-    while (j < pma->arr_cap) { // 向右查找空slot
+    while (j < pma->arr_cap) { 
         blk_idx = j / PM_BLK_SIZE;  
         bit_idx = j % PM_BLK_SIZE;
         // pm_blk blk = src.blk_list[blk_idx];
@@ -609,25 +605,25 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
 
         while (j > index + 1) /* Push elements to make space for the new element. */
         {
-            blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = j / PM_BLK_SIZE;  
             bit_idx = j % PM_BLK_SIZE;
-            int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  
             int32_t pre_bit_idx = (j-1) % PM_BLK_SIZE;
 
             // if (src->blk_list[blk_idx].next_blk == NULL) {
             //     if (src->blk_list[blk_idx].task_id < global_task_id) {
-            //         pm_blk blk = generate_blk(kind);  // 构建blk副本
+            //         pm_blk blk = generate_blk(kind);  
             //         blk.task_id = global_task_id;
             //         memcpy(blk.blk_ptr, src->blk_list[blk_idx].blk_ptr, PM_BLK_SIZE * sizeof(int32_t));
             //         src->blk_list[blk_idx].next_blk = &blk;
             //     }
             // } else {
-            //     pm_blk* next_blk = src->blk_list[blk_idx].next_blk; // 肯定不为空
+            //     pm_blk* next_blk = src->blk_list[blk_idx].next_blk; // 
             //     while (next_blk->next_blk != NULL) {
             //         next_blk = next_blk->next_blk;
             //     }
             //     if (next_blk->task_id < global_task_id) {
-            //         pm_blk blk = generate_blk(kind);  // 构建blk副本
+            //         pm_blk blk = generate_blk(kind);  // 
             //         blk.task_id = global_task_id;
             //         next_blk->next_blk = &blk;
             //         memcpy(blk.blk_ptr, src->blk_list[blk_idx].blk_ptr, PM_BLK_SIZE * sizeof(int32_t));
@@ -636,7 +632,7 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
 
             // if (src->blk_list[blk_idx].task_id < global_task_id && src->blk_list[blk_idx].next_blk == NULL) 
             // {
-            //     pm_blk blk = generate_blk(kind);  // 构建blk副本
+            //     pm_blk blk = generate_blk(kind);  // 
             //     blk.task_id = global_task_id;
             //     memcpy(blk.blk_ptr, src->blk_list[blk_idx].blk_ptr, PM_BLK_SIZE * sizeof(int32_t));
             //     src->blk_list[blk_idx].next_blk = &blk;
@@ -661,19 +657,19 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
             // }
         }
 
-        blk_idx = (index + 1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        blk_idx = (index + 1) / PM_BLK_SIZE;  // 
         bit_idx = (index + 1) % PM_BLK_SIZE;
         src->blk_list[blk_idx].blk_ptr[bit_idx] = des;
         // cout << "test--- bit_idx: " << bit_idx << endl;
-        index = index + 1;  // 此处index表示元素插入的实际位置，后续rebalance的时候用
+        index = index + 1;  
     } else { /* No empty space to the right of i. Try left. */
         // cout << "test --1 des: " << des << " index: " << index << endl;
         // cout << "insert left..." << endl;
         j = index - 1;
-        // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // blk_idx = j / PM_BLK_SIZE;  
         // bit_idx = j % PM_BLK_SIZE;
         while (j > 0) {
-            blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = j / PM_BLK_SIZE;  
             bit_idx = j % PM_BLK_SIZE;
             pm_blk blk = src->blk_list[blk_idx];
             if (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)
@@ -713,16 +709,16 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
                     }
                 }
             }
-            // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // blk_idx = j / PM_BLK_SIZE;  
             // bit_idx = j % PM_BLK_SIZE;
-            // int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  
             // int32_t be_bit_idx = (j+1) % PM_BLK_SIZE;
             // pm_blk blk = src.blk_list[blk_idx];
             // setBit(&src.blk_list[blk_idx].myBitmap, bit_idx);
             while (j < index) {
-                blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+                blk_idx = j / PM_BLK_SIZE;  
                 bit_idx = j % PM_BLK_SIZE;
-                int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+                int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  
                 int32_t be_bit_idx = (j+1) % PM_BLK_SIZE;
                 src->blk_list[blk_idx].blk_ptr[bit_idx] = src->blk_list[be_blk_idx].blk_ptr[be_bit_idx];
                 j++;
@@ -738,7 +734,7 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
                 //     be_blk_idx++;
                 // }
             }
-            blk_idx = (index) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = (index) / PM_BLK_SIZE;  
             bit_idx = (index) % PM_BLK_SIZE;
             src->blk_list[blk_idx].blk_ptr[bit_idx] = des;
         }
@@ -763,7 +759,6 @@ int32_t pma_insert_mv(PMA* pma, Vertex *src, int32_t des, int32_t index, memkind
 
 void rebalance(PMA* pma, Vertex *src, int32_t index, memkind_t kind) 
 {
-    // 查找合适window的过程基于各block的bitmap即可
     int32_t window_start, window_end;
     int32_t height = 0;
     uint32_t occupancy = 1;
@@ -811,10 +806,10 @@ void rebalance(PMA* pma, Vertex *src, int32_t index, memkind_t kind)
         t_height = t_0 - (height * pma->delta_t);
         p_height = p_0 + (height * pma->delta_p);
         height++;
-    } while (( // 直至找到符合稠密度要求的Window density < p_height可删除
+    } while (( 
             density >= t_height) &&
            height < pma->tree_h);
-    // while ((density < p_height ||  // 直至找到符合稠密度要求的Window density < p_height可删除
+    // while ((density < p_height ||  //  density < p_height
     //         density >= t_height) &&
     //        height < pma->tree_h);
 
@@ -856,7 +851,6 @@ void rebalance(PMA* pma, Vertex *src, int32_t index, memkind_t kind)
 
 void rebalance_mv(PMA* pma, Vertex *src, int32_t index, memkind_t kind) 
 {
-    // 查找合适window的过程基于各block的bitmap即可
     int32_t window_start, window_end;
     int32_t height = 0;
     uint32_t occupancy = 1;
@@ -904,8 +898,7 @@ void rebalance_mv(PMA* pma, Vertex *src, int32_t index, memkind_t kind)
         t_height = t_0 - (height * pma->delta_t);
         p_height = p_0 + (height * pma->delta_p);
         height++;
-    } while (density >= t_height && height < pma->tree_h);  // 直至找到符合稠密度要求的Window density < p_height可删除
-    // 此处只有插入边情况，因此不需要判断下限是否越界
+    } while (density >= t_height && height < pma->tree_h);  
            
 
     // cout << "height: " << height << " pma tree: " << pma->tree_h << endl;
@@ -963,7 +956,6 @@ void rebalance_mv(PMA* pma, Vertex *src, int32_t index, memkind_t kind)
         // print_vertex(src);
     } else {
         // cout << "test --- rebalance resize. occupancy: " << occupancy << endl;
-        // 先备份未resize前的blk
         int32_t max_blk = src->blk_list.size();
         int32_t min_blk = 0;
         pm_blk* next_blk = NULL;
@@ -990,7 +982,6 @@ void rebalance_mv(PMA* pma, Vertex *src, int32_t index, memkind_t kind)
             }
         }
         resize (pma, src, kind);
-        // 新增的blk限制其访问task id
         for (int32_t tmp_blk = max_blk; tmp_blk < src->blk_list.size(); tmp_blk++) {
             src->blk_list[tmp_blk].task_id = global_task_id;
         }
@@ -1001,13 +992,11 @@ void rebalance_mv(PMA* pma, Vertex *src, int32_t index, memkind_t kind)
 
 void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy, memkind_t kind)
 {
-    /*
-        将PMA上对应window放置在DRAM中平均分布
-    */
+ 
     assert (from < to);
-    int32_t capacity = to - from; // 不包含to
+    int32_t capacity = to - from; 
     int32_t frequency = (capacity << 8) / occupancy;  /* 8-bit fixed point arithmetic. */
-    int32_t read_index = to - 1;  // 最后一个元素位置
+    int32_t read_index = to - 1;  
     int32_t write_index = (to << 8) - frequency;
 
     int32_t start_blk = from / PM_BLK_SIZE;
@@ -1022,7 +1011,7 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
     // memset(tmp_win_arr, -1, capacity * sizeof(int32_t));
 
     if (tmp_win_arr != NULL) {
-    // 使用循环逐个元素将数组初始化为 -1
+    //  -1
         for (size_t i = 0; i < capacity; ++i) {
             tmp_win_arr[i] = -1;
         }
@@ -1044,20 +1033,20 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
     // cout << "span_blks: " << span_blks << endl;
     // cout << "from: " << from << " to: " << to << endl;
     // print_vertex(src);
-    if (span_blks == 1) {// 说明当前window在同一blk中
+    if (span_blks == 1) {
         int32_t base_off = start_blk * PM_BLK_SIZE;
         read_index = read_index - base_off;
-        write_index = ((to-base_off) << 8) - frequency;  // 相当于blk内部绝对index
+        write_index = ((to-base_off) << 8) - frequency;  
         from = from - base_off;
         // cout << "from: " << from << " to: " << to << " write_index: " << (write_index >> 8) << endl;
         // Bitmap32 readBitmap = src.blk_list[start_blk].myBitmap; 
         // print_bitmap(&readBitmap);
-        // 置位 bitmap
+        //  bitmap
         // for (int i = from; i < (to-base_off); i++) {
         //     clearBit(&src.blk_list[start_blk].myBitmap, i);
         // }
         int32_t real_write_idx = (write_index >> 8) - from;
-        occupancy -= 1; // 类似read_index初始绝对位置
+        occupancy -= 1; 
         while (read_index >= from) {
             if (src->blk_list[start_blk].blk_ptr[read_index] >= 0) {
             // if (testBit(&readBitmap, read_index)) {
@@ -1080,27 +1069,27 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
             }
         }
         // copy tmp_win_arr to pma
-        memcpy(&src->blk_list[start_blk].blk_ptr[from], tmp_win_arr, sizeof(int32_t) * capacity); // 将数组元素复制回PMA
+        memcpy(&src->blk_list[start_blk].blk_ptr[from], tmp_win_arr, sizeof(int32_t) * capacity); 
         // free(tmp_win_arr);
         // if (from < 0 || from >= PM_BLK_SIZE || (from + capacity - 1) >= 32) {
         //     cout << "error 1" << endl;
         //     exit(1);
         // }
-    } else {  // 当前window跨越多个block，挨个block进行处理
-        // write_index = (capacity << 8) - frequency; // DRAM数组中的位置
+    } else {  
+        // write_index = (capacity << 8) - frequency; 
         // vector<Bitmap32> resultBitMapVec;
         // for (int32_t j = start_blk; j <= end_blk; j++) {
         //     Bitmap32 bitMap;
         //     initializeBitmap(&bitMap);
         //     resultBitMapVec.push_back(bitMap);
-        //     // 将对应位置reset
+        //     
         // }
-        // int32_t tmpResBitmapIdx = span_blks - 1; // 从最后一个blk开始
+        // int32_t tmpResBitmapIdx = span_blks - 1; 
         // write_index = (occupancy << 8) - frequency;
-        occupancy -= 1; // 类似read_index初始绝对位置
+        occupancy -= 1; 
         int32_t real_write_idx = (write_index >> 8) - from;
         for (int i = end_blk; i >= start_blk; i--) {
-            int32_t loc_win_from, loc_win_to; // blk中的绝对地址
+            int32_t loc_win_from, loc_win_to; 
             if (i > start_blk) {
                 loc_win_from = 0;
             } else {
@@ -1122,7 +1111,7 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
                     // cout << src->blk_list[i].blk_ptr[loc_win_to] << ", ";
                     // clearBit(&src.blk_list[i].myBitmap, loc_win_to);
                     // int32_t blk_offset = (write_index >> 8) % PM_BLK_SIZE;
-                    // setBit(&resultBitMapVec[tmpResBitmapIdx], blk_offset); // 修改resultBitMapVec中对应blk bitmap中的位
+                    // setBit(&resultBitMapVec[tmpResBitmapIdx], blk_offset); 
                     write_index -= frequency;
                     real_write_idx = (write_index >> 8) - from;
                     occupancy --;
@@ -1131,18 +1120,12 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
                         real_write_idx = occupancy;
                     }
                     
-
-                    // if ((write_index >> 8) % PM_BLK_SIZE > blk_offset) {  // 切换blk的bitmap，因为同blk中随着write index减少，余数越小。出现反差说明切换了blk
-                    //     tmpResBitmapIdx--;
-                    //     // assert(tmpResBitmapIdx >= 0);
-                    // }
                 }
                 loc_win_to--;
             }
             // assert((write_index >> 8) >= from);
         }
         // cout << endl;
-        // 更新blk的bitmap 以及 替换PMA window数据
 
         // cout << "tmp_win_arr: ";
         // for (int i = 0; i < capacity; i++) {
@@ -1153,7 +1136,7 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
         // tmpResBitmapIdx = 0;
         int32_t cpy_src = 0;
         int32_t cpy_des = from % PM_BLK_SIZE;
-        int32_t cpy_size = PM_BLK_SIZE - cpy_des;  // 元素数量 不是字节数
+        int32_t cpy_size = PM_BLK_SIZE - cpy_des;   
         // cout << "start blk: " << start_blk << " end blk: " << end_blk << endl; 
         for (int32_t i = start_blk; i <= end_blk; i++) {
             // cout << "cpy_des: " << cpy_des << " cpy_src: " << cpy_src << " cpy_size: " << cpy_size << endl;
@@ -1167,8 +1150,8 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
             cpy_des = 0;
             cpy_src += cpy_size;
 
-            if (i == (end_blk-1)) { // 为最后一个blk准备cpy_size
-                cpy_size = ((to-1) % PM_BLK_SIZE) + 1;  // +1 是因为index从0开始，copy的数量要+1
+            if (i == (end_blk-1)) { 
+                cpy_size = ((to-1) % PM_BLK_SIZE) + 1;  
             } else {
                 cpy_size = PM_BLK_SIZE;
             }
@@ -1181,7 +1164,7 @@ void spread (PMA* pma, Vertex *src, int32_t from, int32_t to, int32_t occupancy,
 
 void resize (PMA* pma, Vertex *src, memkind_t kind)
 {
-    int32_t read_index = pma->arr_cap - 1;  // 原先pma的末端开始读取
+    int32_t read_index = pma->arr_cap - 1;  
     int32_t readBitmapIdx = src->blk_list.size() - 1;
     // print_vertex(src);
     compute_capacity(pma);
@@ -1190,8 +1173,7 @@ void resize (PMA* pma, Vertex *src, memkind_t kind)
     pma->delta_p = (p_h - p_0) / pma->tree_h;
 
 
-    // 根据现有blk数量和pma容量计算所需额外blk数量
-    int32_t blk_num = ceil((double)pma->arr_cap / PM_BLK_SIZE);  // 所需总的blk数量
+    int32_t blk_num = ceil((double)pma->arr_cap / PM_BLK_SIZE);  
     int32_t ex_blk_num = blk_num - src->blk_list.size();
 
 
@@ -1221,7 +1203,7 @@ void resize (PMA* pma, Vertex *src, memkind_t kind)
         #pragma omp critical
         {
             for (int32_t i=0; i < ex_blk_num; i++) {
-                // pm_blk blk = global_blk_vec.back();  // 取出最后一个blk
+                // pm_blk blk = global_blk_vec.back();  
                 // initializeBitmap(&blk.myBitmap);
                 // cout << "blk[0]: " << blk.blk_ptr[0] << endl;
                 
@@ -1245,7 +1227,7 @@ void resize (PMA* pma, Vertex *src, memkind_t kind)
     int32_t write_index = (capacity << 8) - frequency;
 
     // cout << "read_idx: " << read_index << " write_index: " << (write_index >> 8) << endl;
-    int32_t writeBitmapIdx = src->blk_list.size() - 1; // 最后一个blk 索引
+    int32_t writeBitmapIdx = src->blk_list.size() - 1; 
     
     while ((write_index >> 8) > read_index && read_index >= 0)
     {
@@ -1293,16 +1275,16 @@ void resize (PMA* pma, Vertex *src, memkind_t kind)
 int32_t pma_insert_parallel(PMA* pma, Vertex *src, int32_t des, int32_t index, int thread_num, memkind_t kind)
 {
     /*
-        insert after index // index 需要进行换算
+        insert after index 
     */
     int32_t j = index + 1;
     int32_t blk_idx, bit_idx;
 
     // cout << "j: " << j << " pma->arr_cap: " <<  pma->arr_cap << endl;
-    // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+    // blk_idx = j / PM_BLK_SIZE;  
     // bit_idx = j % PM_BLK_SIZE;
-    while (j < pma->arr_cap) { // 向右查找空slot
-        blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+    while (j < pma->arr_cap) { 
+        blk_idx = j / PM_BLK_SIZE;  
         bit_idx = j % PM_BLK_SIZE;
         // pm_blk blk = src.blk_list[blk_idx];
         if (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)
@@ -1319,16 +1301,16 @@ int32_t pma_insert_parallel(PMA* pma, Vertex *src, int32_t des, int32_t index, i
     
     if (j < pma->arr_cap) {
         // cout << "test --0 des: " << des << endl;
-        // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // blk_idx = j / PM_BLK_SIZE;  
         // bit_idx = j % PM_BLK_SIZE;
-        // int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  
         // int32_t pre_bit_idx = (j-1) % PM_BLK_SIZE;
 
         while (j > index + 1) /* Push elements to make space for the new element. */
         {
-            blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = j / PM_BLK_SIZE;  
             bit_idx = j % PM_BLK_SIZE;
-            int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            int32_t pre_blk_idx = (j-1) / PM_BLK_SIZE;  
             int32_t pre_bit_idx = (j-1) % PM_BLK_SIZE;
 
             src->blk_list[blk_idx].blk_ptr[bit_idx] = src->blk_list[pre_blk_idx].blk_ptr[pre_bit_idx];
@@ -1347,18 +1329,18 @@ int32_t pma_insert_parallel(PMA* pma, Vertex *src, int32_t des, int32_t index, i
             // }
         }
 
-        blk_idx = (index + 1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        blk_idx = (index + 1) / PM_BLK_SIZE;  
         bit_idx = (index + 1) % PM_BLK_SIZE;
         src->blk_list[blk_idx].blk_ptr[bit_idx] = des;
         // cout << "test--- bit_idx: " << bit_idx << endl;
-        index = index + 1;  // 此处index表示元素插入的实际位置，后续rebalance的时候用
+        index = index + 1;  
     } else { /* No empty space to the right of i. Try left. */
         // cout << "test --1 des: " << des << " index: " << index << endl;
         j = index - 1;
-        // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        // blk_idx = j / PM_BLK_SIZE;  
         // bit_idx = j % PM_BLK_SIZE;
         while (j > 0) {
-            blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = j / PM_BLK_SIZE;  
             bit_idx = j % PM_BLK_SIZE;
             pm_blk blk = src->blk_list[blk_idx];
             if (src->blk_list[blk_idx].blk_ptr[bit_idx] < 0)
@@ -1373,16 +1355,16 @@ int32_t pma_insert_parallel(PMA* pma, Vertex *src, int32_t des, int32_t index, i
             // }
         }
         if (j >= 0) {
-            // blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // blk_idx = j / PM_BLK_SIZE; 
             // bit_idx = j % PM_BLK_SIZE;
-            // int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  
             // int32_t be_bit_idx = (j+1) % PM_BLK_SIZE;
             // pm_blk blk = src.blk_list[blk_idx];
             // setBit(&src.blk_list[blk_idx].myBitmap, bit_idx);
             while (j < index) {
-                blk_idx = j / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+                blk_idx = j / PM_BLK_SIZE;  
                 bit_idx = j % PM_BLK_SIZE;
-                int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+                int32_t be_blk_idx = (j+1) / PM_BLK_SIZE;  
                 int32_t be_bit_idx = (j+1) % PM_BLK_SIZE;
                 src->blk_list[blk_idx].blk_ptr[bit_idx] = src->blk_list[be_blk_idx].blk_ptr[be_bit_idx];
                 j++;
@@ -1398,7 +1380,7 @@ int32_t pma_insert_parallel(PMA* pma, Vertex *src, int32_t des, int32_t index, i
                 //     be_blk_idx++;
                 // }
             }
-            blk_idx = (index) / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            blk_idx = (index) / PM_BLK_SIZE;  
             bit_idx = (index) % PM_BLK_SIZE;
             src->blk_list[blk_idx].blk_ptr[bit_idx] = des;
         }
@@ -1416,7 +1398,6 @@ int32_t pma_insert_parallel(PMA* pma, Vertex *src, int32_t des, int32_t index, i
 
 void rebalance_parallel(PMA* pma, Vertex *src, int32_t index, int thread_num, memkind_t kind) 
 {
-    // 查找合适window的过程基于各block的bitmap即可
     int32_t window_start, window_end;
     int32_t height = 0;
     uint32_t occupancy = 1;
@@ -1465,7 +1446,7 @@ void rebalance_parallel(PMA* pma, Vertex *src, int32_t index, int thread_num, me
         p_height = p_0 + (height * pma->delta_p);
         height++;
         
-    } while ((density < p_height ||  // 直至找到符合稠密度要求的Window
+    } while ((density < p_height ||  
             density >= t_height) &&
            height < pma->tree_h);
 
@@ -1506,7 +1487,7 @@ void rebalance_parallel(PMA* pma, Vertex *src, int32_t index, int thread_num, me
 
 void resize_parallel(PMA* pma, Vertex *src, int thread_num, memkind_t kind)
 {
-    int32_t read_index = pma->arr_cap - 1;  // 原先pma的末端开始读取
+    int32_t read_index = pma->arr_cap - 1;  
     int32_t readBitmapIdx = src->blk_list.size() - 1;
     // print_vertex(src);
     compute_capacity(pma);
@@ -1515,8 +1496,7 @@ void resize_parallel(PMA* pma, Vertex *src, int thread_num, memkind_t kind)
     pma->delta_p = (p_h - p_0) / pma->tree_h;
 
 
-    // 根据现有blk数量和pma容量计算所需额外blk数量
-    int32_t blk_num = ceil((double)pma->arr_cap / PM_BLK_SIZE);  // 所需总的blk数量
+    int32_t blk_num = ceil((double)pma->arr_cap / PM_BLK_SIZE);  
     int32_t ex_blk_num = blk_num - src->blk_list.size();
 
 
@@ -1543,7 +1523,7 @@ void resize_parallel(PMA* pma, Vertex *src, int thread_num, memkind_t kind)
     int32_t write_index = (capacity << 8) - frequency;
 
     // cout << "read_idx: " << read_index << " write_index: " << (write_index >> 8) << endl;
-    int32_t writeBitmapIdx = src->blk_list.size() - 1; // 最后一个blk 索引
+    int32_t writeBitmapIdx = src->blk_list.size() - 1;
     
     while ((write_index >> 8) > read_index && read_index >= 0)
     {
@@ -1590,7 +1570,7 @@ void resize_parallel(PMA* pma, Vertex *src, int thread_num, memkind_t kind)
 
 static void compute_capacity (PMA* pma) 
 {
-    /*根据已有元素个数确定seg_len，arr_cap*/
+    /*锛宎rr_cap*/
     pma->seg_len = ceil_lg (pma->ele_num);  /* Ideal segment size. */
     pma->seg_num = ceil_div (pma->ele_num, pma->seg_len);  /* Ideal number of segments. */
     /* The number of segments has to be a power of 2. */
@@ -1644,17 +1624,17 @@ void graph_maintenance_nvm(memkind_t kind)
         //     start_t = get_current_time();
         // }
 
-		// new_edge e = global_edge_vec[edgeIdx]; // 从DRAM上读取
-        new_edge e = global_edge_array[edgeIdx];  // 从nvm上读取
+		// new_edge e = global_edge_vec[edgeIdx]; 
+        new_edge e = global_edge_array[edgeIdx];  
 		int32_t src = e.src;
-        // int32_t src = 1;  // 验证blk based的高效性
+        // int32_t src = 1;   
 		int32_t des = e.des;
 		Vertex* v = global_vectex_vec[src];
 		int32_t index;
         // cout << "edgeIdx: " << edgeIdx << " src: " << src << " des: " << des << endl;
         
 		// int32_t blk_idx = pma_find(global_vectex_vec[src].pma, global_vectex_vec[src], des, 0, (global_vectex_vec[src].blk_cnt-1), index);
-		// index = blk_idx * PM_BLK_SIZE + index; // 全局index；
+		// index = blk_idx * PM_BLK_SIZE + index; 
         // cout << "blk_idx: " << blk_idx << " index: " << index << endl;
         index = binary_pma_find(v->pma, v, des, 0, v->pma->arr_cap-1); // insert after index
         // cout << "test--" << endl;
@@ -1689,10 +1669,10 @@ void graph_maintenance_nvm_parallel_shuffle(memkind_t kind)
         //     start_t = get_current_time();
         // }
 
-		new_edge e = global_edge_vec[edgeIdx]; // 从DRAM上读取
-        // new_edge e = global_edge_array[edgeIdx];  // 从nvm上读取
+		new_edge e = global_edge_vec[edgeIdx]; 
+        // new_edge e = global_edge_array[edgeIdx];  
 		int32_t src = e.src;
-        // int32_t src = 1;  // 验证blk based的高效性
+        // int32_t src = 1;  
 		int32_t des = e.des;
 		Vertex* v = global_vectex_vec[src];
         std::unique_lock<std::shared_timed_mutex> lock(v->mutex);
@@ -1732,10 +1712,10 @@ void graph_maintenance_nvm_parallel_shuffle_mix(memkind_t kind)
         //     start_t = get_current_time();
         // }
 
-		new_edge e = global_edge_vec[edgeIdx]; // 从DRAM上读取
-        // new_edge e = global_edge_array[edgeIdx];  // 从nvm上读取
+		new_edge e = global_edge_vec[edgeIdx]; 
+        // new_edge e = global_edge_array[edgeIdx];  
 		int32_t src = e.src;
-        // int32_t src = 1;  // 验证blk based的高效性
+        // int32_t src = 1;  
 		int32_t des = e.des;
 		Vertex* v = global_vectex_vec[src];
         std::unique_lock<std::shared_timed_mutex> lock(v->mutex);
@@ -1748,7 +1728,7 @@ void graph_maintenance_nvm_parallel_shuffle_mix(memkind_t kind)
         int status = e.statue;
         if (status < 0) { // delete edge
             continue;
-            // int32_t blk_idx = index / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            // int32_t blk_idx = index / PM_BLK_SIZE;  
             // int32_t bit_idx = index % PM_BLK_SIZE;
             // if (v_src->blk_list[blk_idx].blk_ptr[bit_idx] == des) {
             //     v_src->blk_list[blk_idx].blk_ptr[bit_idx] = -1;
@@ -1782,17 +1762,17 @@ void graph_maintenance_nvm_mv(memkind_t kind)
         //     start_t = get_current_time();
         // }
 
-		// new_edge e = global_edge_vec[edgeIdx]; // 从DRAM上读取
-        new_edge e = global_edge_array[edgeIdx];  // 从nvm上读取
+		// new_edge e = global_edge_vec[edgeIdx]; 
+        new_edge e = global_edge_array[edgeIdx];  
 		int32_t src = e.src;
-        // int32_t src = 1;  // 验证blk based的高效性
+        // int32_t src = 1;  
 		int32_t des = e.des;
 		Vertex* v = global_vectex_vec[src];
 		int32_t index;
         // cout << "edgeIdx: " << edgeIdx << " src: " << src << " des: " << des << endl;
         
 		// int32_t blk_idx = pma_find(global_vectex_vec[src].pma, global_vectex_vec[src], des, 0, (global_vectex_vec[src].blk_cnt-1), index);
-		// index = blk_idx * PM_BLK_SIZE + index; // 全局index；
+		// index = blk_idx * PM_BLK_SIZE + index; 
         // cout << "blk_idx: " << blk_idx << " index: " << index << endl;
         index = binary_pma_find(v->pma, v, des, 0, v->pma->arr_cap-1); // insert after index
         // cout << "test--" << endl;
@@ -1816,13 +1796,11 @@ void graph_maintenance_nvm_mv(memkind_t kind)
 
 void insert_edge_for_concurrent(new_edge e, memkind_t kind)
 {
-    /* 
-        对于streaming edges，需要单边处理，并且上锁
-    */
-    writerCnt++;  // 原子操作
+
+    writerCnt++;  
 
     int32_t src = e.src;
-    // int32_t src = 1;  // 验证blk based的高效性
+    // int32_t src = 1;  
     int32_t des = e.des;
     Vertex* v = global_vectex_vec[src];
     std::unique_lock<std::shared_timed_mutex> lock(v->mutex);
@@ -1835,7 +1813,7 @@ void insert_edge_for_concurrent(new_edge e, memkind_t kind)
     // cout << "v1 next blk task id 1: " << global_vectex_vec[1]->blk_list[0].next_blk->task_id << endl;
     // cout << "v1 next blk task id 1.1: " << global_vectex_vec[1]->blk_list[0].next_blk->task_id << endl;
     // cout << "v1 next blk task id 1.2: " << global_vectex_vec[1]->blk_list[0].next_blk->task_id << endl;
-    writerCnt--; // 当前写操作完成，writerCnt为0才能执行 读
+    writerCnt--; 
     // cout << "insertion done!" << endl;
 }
 
@@ -1869,7 +1847,7 @@ void graph_maintenance_nvm_mixed_parallel(Vertex *src, int64_t start_off, int64_
         int status = global_edge_array[edgeIdx].statue;
         int32_t index = binary_pma_find(src->pma, src, des, 0, src->pma->arr_cap-1);
         if (status < 0) { // delete edge
-            int32_t blk_idx = index / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+            int32_t blk_idx = index / PM_BLK_SIZE;  
             int32_t bit_idx = index % PM_BLK_SIZE;
             if (src->blk_list[blk_idx].blk_ptr[bit_idx] == des) {
                 src->blk_list[blk_idx].blk_ptr[bit_idx] = -1;
@@ -1933,15 +1911,15 @@ void graph_maintenance_delete(memkind_t kind)
     #pragma omp parallel for
 	for (int64_t edgeIdx = 0; edgeIdx < (global_edge_num/2); edgeIdx++)
 	{
-		// new_edge e = global_edge_vec[edgeIdx]; // 从DRAM上读取
-        new_edge e = global_edge_array[edgeIdx];  // 从nvm上读取
+		// new_edge e = global_edge_vec[edgeIdx]; 
+        new_edge e = global_edge_array[edgeIdx];  
 		int32_t src = e.src;
-        // int32_t src = 1;  // 验证blk based的高效性
+        // int32_t src = 1;  
 		int32_t des = e.des;
 		Vertex* v = global_vectex_vec[src];
 		int32_t index;
         index = binary_pma_find(v->pma, v, des, 0, v->pma->arr_cap-1);
-        int32_t blk_idx = index / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+        int32_t blk_idx = index / PM_BLK_SIZE;  
         int32_t bit_idx = index % PM_BLK_SIZE;
 
         if (v->blk_list[blk_idx].blk_ptr[bit_idx] == des) {
@@ -1954,12 +1932,10 @@ void graph_maintenance_delete(memkind_t kind)
 
     }
     // cout << "delete over --" << endl;
-    // 判断达到阈值即进行。可并发，不同顶点更新独立
     #pragma omp parallel for
     for (int32_t vidx = 0; vidx < global_vectex_vec.size(); vidx++) {
         Vertex *v = global_vectex_vec[vidx];
         if (v->degree == 0) { 
-            // 没有邻节点，仅保留一个blk，将多余的blk返还给blk management
             #pragma omp critical
             {
                 int32_t ori_blk_cnt = v->blk_list.size();
@@ -1971,11 +1947,10 @@ void graph_maintenance_delete(memkind_t kind)
             continue;
         }
         // cout << "test --0 degree: " << v->degree << " v->pma->arr_cap: " << v->pma->arr_cap  << endl;
-        // 整个pma元素数量过少，需要resize，即缩小pma->array_cap
         double density = (double)v->degree / (double)v->pma->arr_cap;
         if (v->blk_list.size() > 1 && (density < p_0)) { 
             PMA *pma = v->pma;
-            int32_t read_index = pma->arr_cap - 1;  // 最后一个元素位置
+            int32_t read_index = pma->arr_cap - 1;  
             compute_capacity(pma);
             pma->tree_h = floor_lg (pma->seg_num) + 1;
             pma->delta_t = (t_0 - t_h) / pma->tree_h;
@@ -1983,14 +1958,14 @@ void graph_maintenance_delete(memkind_t kind)
             
             // from:0 to:capacity
             int32_t capacity = pma->arr_cap;
-            int32_t new_blk_num = capacity / PM_BLK_SIZE;  // 实际需要的blk数量，需要将v->blk_list.size()更新为此值
+            int32_t new_blk_num = capacity / PM_BLK_SIZE;  
             int32_t occupancy = v->degree;
             int32_t frequency = (capacity << 8) / occupancy; 
             int32_t write_index = (capacity << 8) - frequency;
 
             int32_t *tmp_win_arr = (int32_t*)malloc(capacity * sizeof(int32_t));
 
-            while (read_index >= 0) { // 读取所有邻节点，并平均分散存储在tmp_win_arr中
+            while (read_index >= 0) { 
                 int32_t blk_idx = read_index / PM_BLK_SIZE;
                 int32_t bit_idx = read_index % PM_BLK_SIZE;
 
@@ -2003,19 +1978,17 @@ void graph_maintenance_delete(memkind_t kind)
             }
             int32_t ori_blk_cnt = v->blk_list.size();
             // cout << "test--1 capacity: " << capacity << " new_blk_num: " << new_blk_num << " ori_blk_cnt: " << ori_blk_cnt << endl;
-            // 将数据迁移至pma中
             int32_t cpy_src = 0;
             int32_t cpy_des = 0;
             int32_t cpy_size = PM_BLK_SIZE;
             for (int32_t i = 0; i < new_blk_num; i++) {
                 memcpy(&v->blk_list[i].blk_ptr[cpy_des], &tmp_win_arr[cpy_src], cpy_size * sizeof(int32_t));
                 cpy_src += cpy_size;
-                if (i == (new_blk_num - 2)) {  // 倒数第二个blk copy结束，最后一个blk可能不满
-                    cpy_size = (capacity-1) % PM_BLK_SIZE + 1; // +1 是因为index从0开始，copy的数量要+1
+                if (i == (new_blk_num - 2)) { 
+                    cpy_size = (capacity-1) % PM_BLK_SIZE + 1; 
                 }
             }
             // cout << "test--2" << endl;
-            // 将多余的blk返还给blk management
             #pragma omp critical
             {
                 for (int blk_idx = new_blk_num; blk_idx < ori_blk_cnt; blk_idx++) {
@@ -2039,40 +2012,38 @@ void graph_maintenance_delete(memkind_t kind)
 
 void delete_edge_for_concurrent(new_edge e, memkind_t kind)
 {
-    /* 
-        对于streaming edges，需要单边处理，并且上锁
-    */
-    writerCnt++;  // 原子操作
+
+    writerCnt++; 
 
     int32_t src = e.src;
-    // int32_t src = 1;  // 验证blk based的高效性
+    // int32_t src = 1;  
     int32_t des = e.des;
     Vertex* v = global_vectex_vec[src];
-    std::unique_lock<std::shared_timed_mutex> lock(v->mutex); // 写锁
+    std::unique_lock<std::shared_timed_mutex> lock(v->mutex); 
 
     int32_t index;
 
     index = binary_pma_find(v->pma, v, des, 0, v->pma->arr_cap-1); // insert after index
-    int32_t blk_idx = index / PM_BLK_SIZE;  // 读取bitmap代替读取NVM
+    int32_t blk_idx = index / PM_BLK_SIZE;  
     int32_t bit_idx = index % PM_BLK_SIZE;
 
-    // 先做备份 cow：局部snapshot
+
     if (v->blk_list[blk_idx].next_blk == NULL) {
         // cout << "blk task id: " << v->blk_list[blk_idx].task_id << " global_task_id: " << global_task_id << endl;
         if (v->blk_list[blk_idx].task_id < global_task_id) {
-            // pm_blk blk = generate_blk(kind);  // 构建blk副本
+            // pm_blk blk = generate_blk(kind);  
             pm_blk* blk = new pm_blk(generate_blk(kind));
             blk->task_id = global_task_id;
             memcpy(blk->blk_ptr, v->blk_list[blk_idx].blk_ptr, PM_BLK_SIZE * sizeof(int32_t));
             v->blk_list[blk_idx].next_blk = blk;
         }
     } else {
-        pm_blk* next_blk = v->blk_list[blk_idx].next_blk; // 肯定不为空
+        pm_blk* next_blk = v->blk_list[blk_idx].next_blk; 
         while (next_blk->next_blk != NULL) {
             next_blk = next_blk->next_blk;
         }
-        if (next_blk->task_id < global_task_id) {  // 如果等于global_task_id，则不需要再构建副本
-            // pm_blk blk = generate_blk(kind);  // 构建blk副本
+        if (next_blk->task_id < global_task_id) {  
+            // pm_blk blk = generate_blk(kind);
             pm_blk* blk = new pm_blk(generate_blk(kind));
             blk->task_id = global_task_id;
             next_blk->next_blk = blk;
@@ -2089,21 +2060,17 @@ void delete_edge_for_concurrent(new_edge e, memkind_t kind)
         cout << "error deletion: the edge didn't exist." << endl;
     }
 
-    writerCnt--; // 当前写操作完成，writerCnt为0才能执行 读
+    writerCnt--; 
     // cout << "deletion done!" << endl;
 }
 
 void recycle_blk_for_del(vector<Vertex *> vset)
 {
-    // 删除边时，只是将对应位置更新为-1，更新degree，在一定周期后 需要检测需要resize的顶点，回收blk
-    // 注意：增边不能直接加入，因为可能没有足够的slots
-    // vset中为邻节点有减少的顶点集合
-    // 判断达到阈值即进行。可并发，不同顶点更新独立
+
     #pragma omp parallel for
     for (int32_t vidx = 0; vidx < vset.size(); vidx++) {
         Vertex *v = vset[vidx];
         if (v->degree == 0) { 
-            // 没有邻节点，仅保留一个blk，将多余的blk返还给blk management
             #pragma omp critical
             {
                 int32_t ori_blk_cnt = v->blk_list.size();
@@ -2115,11 +2082,10 @@ void recycle_blk_for_del(vector<Vertex *> vset)
             continue;
         }
 
-        // 整个pma元素数量过少，需要resize，即缩小pma->array_cap
         double density = (double)v->degree / (double)v->pma->arr_cap;
         if (v->blk_list.size() > 1 && (density < p_0)) { 
             PMA *pma = v->pma;
-            int32_t read_index = pma->arr_cap - 1;  // 最后一个元素位置
+            int32_t read_index = pma->arr_cap - 1;  
             compute_capacity(pma);
             pma->tree_h = floor_lg (pma->seg_num) + 1;
             pma->delta_t = (t_0 - t_h) / pma->tree_h;
@@ -2127,14 +2093,14 @@ void recycle_blk_for_del(vector<Vertex *> vset)
             
             // from:0 to:capacity
             int32_t capacity = pma->arr_cap;
-            int32_t new_blk_num = capacity / PM_BLK_SIZE;  // 实际需要的blk数量，需要将v->blk_list.size()更新为此值
+            int32_t new_blk_num = capacity / PM_BLK_SIZE;  
             int32_t occupancy = v->degree;
             int32_t frequency = (capacity << 8) / occupancy; 
             int32_t write_index = (capacity << 8) - frequency;
 
             int32_t *tmp_win_arr = (int32_t*)malloc(capacity * sizeof(int32_t));
 
-            while (read_index >= 0) { // 读取所有邻节点，并平均分散存储在tmp_win_arr中
+            while (read_index >= 0) {
                 int32_t blk_idx = read_index / PM_BLK_SIZE;
                 int32_t bit_idx = read_index % PM_BLK_SIZE;
 
@@ -2146,19 +2112,18 @@ void recycle_blk_for_del(vector<Vertex *> vset)
                 read_index--;
             }
 
-            // 将数据迁移至pma中
+            
             int32_t cpy_src = 0;
             int32_t cpy_des = 0;
             int32_t cpy_size = PM_BLK_SIZE;
             for (int32_t i = 0; i < new_blk_num; i++) {
                 memcpy(&v->blk_list[i].blk_ptr[cpy_des], &tmp_win_arr[cpy_src], cpy_size * sizeof(int32_t));
                 cpy_src += cpy_size;
-                if (i == (new_blk_num - 2)) {  // 倒数第二个blk copy结束，最后一个blk可能不满
-                    cpy_size = (capacity-1) % PM_BLK_SIZE + 1; // +1 是因为index从0开始，copy的数量要+1
+                if (i == (new_blk_num - 2)) {  
+                    cpy_size = (capacity-1) % PM_BLK_SIZE + 1; 
                 }
             }
 
-            // 将多余的blk返还给blk management
             #pragma omp critical
             {
                 int32_t ori_blk_cnt = v->blk_list.size();
@@ -2173,26 +2138,23 @@ void recycle_blk_for_del(vector<Vertex *> vset)
 
 void clean_snapshot(int32_t task_id, vector<int32_t> vset)
 {
-    /*
-        需要提前把各任务对应需要修改的顶点列表进行梳理
-        最先执行的任务结束后，调用该函数清理其产生的snapshot
-    */
+
     #pragma omp parallel for 
-    for (int32_t vidx = 0; vidx < vset.size(); vidx++) {  // 避免遍历所有顶点，只遍历当前阶段存在边更新的顶点的邻节点
+    for (int32_t vidx = 0; vidx < vset.size(); vidx++) {  
         Vertex *v = global_vectex_vec[vset[vidx]];
-        std::unique_lock<std::shared_timed_mutex> lock(v->mutex); // 写锁
+        std::unique_lock<std::shared_timed_mutex> lock(v->mutex); 
         int32_t blk_cnt = v->blk_list.size();
         for (int32_t blk_idx = 0; blk_idx < blk_cnt; blk_idx++) {
             pm_blk *cur_blk = &(v->blk_list[blk_idx]);
             pm_blk *next_blk = cur_blk->next_blk;
-            while (next_blk != NULL) {  // 第一次进来为第一个next_blk
-                if (next_blk->task_id <= task_id) { // 删除当前blk，并将后续blk链接至原blk
+            while (next_blk != NULL) {  
+                if (next_blk->task_id <= task_id) {
                     cur_blk->next_blk = next_blk->next_blk;
                     // delete next_blk;
-                    if (next_blk->task_id == task_id) { // 删除到当前task id即可结束当前顶点的snapshot回收
+                    if (next_blk->task_id == task_id) {  
                         break;
                     }
-                } else {  // 当前snapshot时间点比task id晚，直接退出
+                } else {  
                     break;
                 }
                 next_blk = next_blk->next_blk;
@@ -2213,7 +2175,7 @@ void clean_snap_cur(void)
                 clean_snapshot(global_min_task, vset);
             }
             global_min_task++;
-            if (global_min_task >= global_task_id) {  // snapshot都删除完了
+            if (global_min_task >= global_task_id) {  
                 break;
             }
         }
@@ -2239,11 +2201,10 @@ void print_vertex(Vertex *v)
 void print_vertex_mv(int32_t vid, Task task)
 {
     Vertex *v = global_vectex_vec[vid];
-    std::shared_lock<std::shared_timed_mutex> lock(v->mutex);  // 并发读锁
+    std::shared_lock<std::shared_timed_mutex> lock(v->mutex);  
     cout << "id: " << v->id << " { ";
       int32_t blk_cnt = v->blk_list.size();
-      // 遍历邻节点
-      // 对于每个blk，查找有没有比当前task_id更大的blk，有则将其赋值给blk_ptr， 没有则将原先blk赋值给blk_ptr
+
         for (int32_t blk_idx = 0; blk_idx < blk_cnt; blk_idx++) {
             pm_blk *cur_blk = &(v->blk_list[blk_idx]);
             int32_t *blk_ptr = NULL;
@@ -2268,7 +2229,7 @@ void print_vertex_mv(int32_t vid, Task task)
             }
             if (cur_blk->task_id <= task.task_id) {
                 blk_ptr = v->blk_list[blk_idx].blk_ptr;
-            } else { // 刚好大于task id
+            } else { 
                 blk_ptr = cur_blk->blk_ptr;
             }
             
