@@ -354,7 +354,7 @@ Tree* avlDelete(Tree *root, const ElenmentType k)
 // 	displayTree_Mid(root);
 // 	cout<<endl;
 // 	int del=79;
-// 	if (!binaryTreeSearch(root,del))//查找删除元素是否存在
+// 	if (!binaryTreeSearch(root,del))
 //     {
 //         cout<<"Delete failed, no result"<<endl;
 //     }else{
