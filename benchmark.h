@@ -56,7 +56,6 @@ ScoreT * PageRankPullGS(int max_iters, double epsilon = 1e-4)
       ScoreT incoming_total = 0;
       Vertex *v = global_vectex_vec[vidx];
       int32_t blk_cnt = v->blk_list.size();
-      // 遍历邻节点
       // #pragma omp parallel for reduction(+ : incoming_total) schedule(dynamic, 64)
       for (int32_t blk_idx = 0; blk_idx < blk_cnt; blk_idx++) {
         int32_t end_idx = PM_BLK_SIZE;
@@ -120,11 +119,9 @@ ScoreT * PageRankPullGS_mv(int max_iters, Task task, double epsilon = 1e-4)
       // cout << "thread: " << omp_get_thread_num() << " total threads: " << omp_get_num_threads();
       ScoreT incoming_total = 0;
       Vertex *v = global_vectex_vec[vidx];
-      std::shared_lock<std::shared_timed_mutex> lock(v->mutex);  // 并发读锁
+      std::shared_lock<std::shared_timed_mutex> lock(v->mutex);  // 
 
       int32_t blk_cnt = v->blk_list.size();
-      // 遍历邻节点
-      // 对于每个blk，查找有没有比当前task_id更大的blk，有则将其赋值给blk_ptr， 没有则将原先blk赋值给blk_ptr
       for (int32_t blk_idx = 0; blk_idx < blk_cnt; blk_idx++) {
         pm_blk *cur_blk = &(v->blk_list[blk_idx]);
         int32_t *blk_ptr = NULL;
@@ -138,7 +135,7 @@ ScoreT * PageRankPullGS_mv(int max_iters, Task task, double epsilon = 1e-4)
         }
         if (cur_blk->task_id <= task.task_id) {
           blk_ptr = v->blk_list[blk_idx].blk_ptr;
-        } else { // 刚好大于task id
+        } else { 
           blk_ptr = cur_blk->blk_ptr;
         }
         
@@ -206,11 +203,10 @@ void PageRankPullGS_mv2(Task task)
       // cout << "thread: " << omp_get_thread_num() << " total threads: " << omp_get_num_threads();
       ScoreT incoming_total = 0;
       Vertex *v = global_vectex_vec[vidx];
-      // std::shared_lock<std::shared_timed_mutex> lock(v->mutex);  // 并发读锁
+      // std::shared_lock<std::shared_timed_mutex> lock(v->mutex);  // 
 
       int32_t blk_cnt = v->blk_list.size();
-      // 遍历邻节点
-      // 对于每个blk，查找有没有比当前task_id更大的blk，有则将其赋值给blk_ptr， 没有则将原先blk赋值给blk_ptr
+       
       for (int32_t blk_idx = 0; blk_idx < blk_cnt; blk_idx++) {
         pm_blk *cur_blk = &(v->blk_list[blk_idx]);
         int32_t *blk_ptr = NULL;
@@ -224,7 +220,7 @@ void PageRankPullGS_mv2(Task task)
         }
         if (cur_blk->task_id <= task.task_id) {
           blk_ptr = v->blk_list[blk_idx].blk_ptr;
-        } else { // 刚好大于task id
+        } else { 
           blk_ptr = cur_blk->blk_ptr;
         }
         
@@ -778,7 +774,6 @@ void test_PR_parallel(Task task)
 
 }
 
-// 构建线程池
 class ThreadPool {
 public:
     ThreadPool(size_t threads) : stop(false) {
@@ -818,7 +813,7 @@ public:
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
 
-            // 不允许在停止的线程池中加入新任务
+            // 涓嶅厑璁稿湪鍋滄鐨勭嚎绋嬫睜涓姞鍏ユ柊浠诲姟
             if(stop)
                 throw std::runtime_error("enqueue on stopped ThreadPool");
 
@@ -858,13 +853,11 @@ void test_PR_threadpool(Task task)
   ThreadPool pool(4);
   
   start_t = get_current_time();
-  auto result1 = pool.enqueue(PageRankPullGS_mv2, task); // 使用 task1 和它的参数
+  auto result1 = pool.enqueue(PageRankPullGS_mv2, task); 
   auto result2 = pool.enqueue(PageRankPullGS_mv2, task);
 
-  // 继续主线程的其他任务...
   std::cout << "Main thread continues executing other tasks..." << std::endl;
 
-  // 在运行时加入新的任务
   auto result3 = pool.enqueue(PageRankPullGS_mv2, task);
   auto result4 = pool.enqueue(PageRankPullGS_mv2, task);
 
