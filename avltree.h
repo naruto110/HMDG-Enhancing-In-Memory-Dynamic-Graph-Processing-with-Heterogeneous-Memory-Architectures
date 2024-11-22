@@ -10,7 +10,7 @@ typedef struct AVLNode{
 	struct AVLNode *right;
 	struct AVLNode *parent;
 	ElenmentType value; 
-}AVLtree,Tree;
+}AVLtree,Tree; 
 
 Tree* avlInit(ElenmentType value){
 	Tree* root=new Tree();
