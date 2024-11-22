@@ -14,7 +14,7 @@ double get_current_time()
 	return (double)t.tv_sec + (double)t.tv_usec / 1000000;
 	//	return 0;
 }
-
+ 
 template <typename T>
 void print_array(T* array, T len)
 {
