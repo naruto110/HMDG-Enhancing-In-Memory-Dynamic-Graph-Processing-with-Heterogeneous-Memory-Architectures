@@ -16,7 +16,7 @@ typedef hash_map<int32_t, vector<int32_t> > Map;
 typedef typename Map::iterator MapIter;
 
 using namespace std;
-
+ 
 /* Height-based (as opposed to depth-based) thresholds. */
 /* Upper density thresholds. */
 static const double t_h = 0.75;  /* root. */
