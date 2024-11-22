@@ -5,7 +5,7 @@ using namespace std;
 typedef size_t ElenmentType; 
 typedef struct AVLNode{
 	int depth;
-    int tombstone; // 0:delete 1:insert
+    int tombstone; // 0:delete 1:insert 
 	struct AVLNode *left;
 	struct AVLNode *right;
 	struct AVLNode *parent;
