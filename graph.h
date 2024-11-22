@@ -2,7 +2,7 @@
 #define __GRAPH_H_
 
 #include "global.h"
-
+ 
 size_v findIdleBlk(vector<idle_blk*> &idle_blk_vec,size_v degree)
 {
 	size_v cap = degree + ceil((float)BUF_PRO * degree) + 3;  
