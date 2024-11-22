@@ -14,7 +14,7 @@
 using namespace std;
 
 #define GRAPH_LAYOUT_NAME "graph"
-#define MAX_BUF_LEN 31
+#define MAX_BUF_LEN 31 
 
 #define POOL_SIZE (int32_t)1024 * 1024 * 1024  // 1 GB
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
