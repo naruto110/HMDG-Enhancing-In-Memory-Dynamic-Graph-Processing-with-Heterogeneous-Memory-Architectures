@@ -1,3 +1,3 @@
-# SMDG-Enhancing-In-Memory-Dynamic-Graph-Processing-with-Heterogeneous-Memory-Architectures
-source code of HMDG
+# SMDG: Enhancing In-Memory Dynamic Graph Processing with Storage-Class Memory
+source code of SMDG
  
