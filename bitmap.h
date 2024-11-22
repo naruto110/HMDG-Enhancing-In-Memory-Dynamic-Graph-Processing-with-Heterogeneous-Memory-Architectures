@@ -26,7 +26,7 @@ void clearBit(Bitmap32* bitmap, int64_t bitIndex) {
     int64_t bitOffset = bitIndex % BITS_PER_WORD;
     bitmap->word &= ~(1U << bitOffset);
 }
-
+ 
 bool testBit(Bitmap32* bitmap, int64_t bitIndex) {
     int64_t bitOffset = bitIndex % BITS_PER_WORD;
     return (bitmap->word & (1U << bitOffset)) != 0;
