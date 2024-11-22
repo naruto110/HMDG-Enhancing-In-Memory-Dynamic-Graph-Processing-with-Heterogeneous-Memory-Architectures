@@ -16,7 +16,7 @@ using namespace std;
 #define M 1
 typedef AVLtree* VAL_TYPE;  
 
-typedef hash_map<int, Tree*> LeafMap;
+typedef hash_map<int, Tree*> LeafMap; 
 typedef typename LeafMap::iterator LeafMapIter;
 
 
