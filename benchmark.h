@@ -19,7 +19,7 @@
 #include <future>
 #include <chrono>
 
-using namespace std;
+using namespace std; 
 
 typedef float ScoreT;
 const float kDamp = 0.85;
